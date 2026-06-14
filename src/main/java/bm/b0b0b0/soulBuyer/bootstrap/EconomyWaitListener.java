@@ -1,6 +1,7 @@
 package bm.b0b0b0.soulBuyer.bootstrap;
 
 import bm.b0b0b0.soulBuyer.SoulBuyer;
+import bm.b0b0b0.soulBuyer.integration.EconomyPluginPresence;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -26,7 +27,9 @@ public final class EconomyWaitListener implements Listener {
     @EventHandler
     public void onPluginEnable(PluginEnableEvent event) {
         String name = event.getPlugin().getName();
-        if ("Vault".equalsIgnoreCase(name) || "PlayerPoints".equalsIgnoreCase(name)) {
+        if ("Vault".equalsIgnoreCase(name)
+                || "PlayerPoints".equalsIgnoreCase(name)
+                || EconomyPluginPresence.isKnownEconomyPlugin(name)) {
             plugin.retryEconomyActivation();
         }
     }

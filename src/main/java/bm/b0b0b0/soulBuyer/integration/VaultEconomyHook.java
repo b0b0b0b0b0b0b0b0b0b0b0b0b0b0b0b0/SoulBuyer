@@ -8,6 +8,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class VaultEconomyHook {
 
+    public enum ProbeState {
+        READY,
+        VAULT_ABSENT,
+        ECONOMY_ABSENT
+    }
+
     private final JavaPlugin plugin;
     private final SoulBuyerDebugLog debug;
     private Economy economy;
@@ -17,27 +23,35 @@ public final class VaultEconomyHook {
         this.debug = debug;
     }
 
-    public boolean hook() {
+    public ProbeState probe() {
         if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
             debug.log("vault hook: Vault plugin missing");
-            return false;
+            return ProbeState.VAULT_ABSENT;
         }
         RegisteredServiceProvider<Economy> provider = Bukkit.getServicesManager().getRegistration(Economy.class);
         if (provider == null) {
             debug.log("vault hook: Economy service not registered yet");
-            return false;
+            return ProbeState.ECONOMY_ABSENT;
         }
         economy = provider.getProvider();
         if (economy == null) {
             debug.log("vault hook: Economy provider null");
-            return false;
+            return ProbeState.ECONOMY_ABSENT;
         }
         debug.log("vault hook OK: " + economy.getName());
-        return true;
+        return ProbeState.READY;
+    }
+
+    public boolean hook() {
+        return probe() == ProbeState.READY;
     }
 
     public boolean available() {
         return economy != null;
+    }
+
+    public String providerName() {
+        return economy == null ? "" : economy.getName();
     }
 
     public boolean deposit(org.bukkit.OfflinePlayer player, double amount) {

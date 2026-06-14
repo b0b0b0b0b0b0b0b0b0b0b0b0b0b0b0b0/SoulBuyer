@@ -89,6 +89,10 @@ public final class RedisBootstrap {
         return pool;
     }
 
+    public boolean connected() {
+        return pool != null;
+    }
+
     public void publishMarketUpdate(String payload) {
         if (pool == null) {
             return;

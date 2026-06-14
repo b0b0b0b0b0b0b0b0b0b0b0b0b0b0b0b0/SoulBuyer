@@ -1,10 +1,13 @@
 package bm.b0b0b0.soulBuyer.integration;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import bm.b0b0b0.soulBuyer.service.BuyerStatsService;
+import java.util.logging.Level;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PlaceholderApiBridge {
+
+    private static final String EXPANSION_CLASS =
+            "bm.b0b0b0.soulBuyer.integration.SoulBuyerPlaceholderExpansion";
 
     private final JavaPlugin plugin;
     private volatile boolean registered;
@@ -14,31 +17,43 @@ public final class PlaceholderApiBridge {
     }
 
     public boolean available() {
-        return Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null;
+        return plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
     }
 
-    public void register(SoulBuyerPlaceholderExpansion expansion) {
+    public boolean registerExpansion(BuyerStatsService buyerStatsService) {
         if (!available() || registered) {
-            return;
+            return false;
         }
-        if (expansion.register()) {
-            registered = true;
+        try {
+            Class<?> expansionClass = Class.forName(EXPANSION_CLASS, true, plugin.getClass().getClassLoader());
+            Object expansion = expansionClass
+                    .getConstructor(JavaPlugin.class, BuyerStatsService.class)
+                    .newInstance(plugin, buyerStatsService);
+            Object result = expansionClass.getMethod("register").invoke(expansion);
+            if (result instanceof Boolean success && success) {
+                registered = true;
+                return true;
+            }
+        } catch (ClassNotFoundException | NoClassDefFoundError exception) {
+            plugin.getLogger().log(Level.WARNING, "PlaceholderAPI classes missing, expansion skipped");
+        } catch (ReflectiveOperationException exception) {
+            plugin.getLogger().log(Level.WARNING, "PlaceholderAPI expansion registration failed", exception);
         }
+        return false;
     }
 
     public void unregister() {
-        if (!registered) {
-            return;
-        }
         registered = false;
     }
 
-    public String apply(Player player, String input) {
+    public String apply(org.bukkit.entity.Player player, String input) {
         if (player == null || input == null || input.isEmpty() || !available()) {
             return input;
         }
         try {
             return me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, input);
+        } catch (NoClassDefFoundError exception) {
+            return input;
         } catch (Throwable throwable) {
             return input;
         }

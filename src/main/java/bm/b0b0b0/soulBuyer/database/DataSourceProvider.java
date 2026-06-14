@@ -14,11 +14,23 @@ public final class DataSourceProvider {
     private final HikariDataSource dataSource;
 
     public DataSourceProvider(JavaPlugin plugin, PluginConfig config) {
+        this(plugin, config, resolveMode(config));
+    }
+
+    public static DataSourceProvider openSqlite(JavaPlugin plugin, PluginConfig config) {
+        return new DataSourceProvider(plugin, config, StorageType.SQLITE);
+    }
+
+    public static DataSourceProvider openMysql(JavaPlugin plugin, PluginConfig config) {
+        return new DataSourceProvider(plugin, config, StorageType.MYSQL);
+    }
+
+    private DataSourceProvider(JavaPlugin plugin, PluginConfig config, StorageType mode) {
         HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setPoolName("SoulBuyer");
-        hikariConfig.setMaximumPoolSize(resolvePoolSize(config));
-        hikariConfig.setConnectionTimeout(resolveTimeout(config));
-        if (config.isMysqlStorage()) {
+        hikariConfig.setMaximumPoolSize(resolvePoolSize(config, mode));
+        hikariConfig.setConnectionTimeout(resolveTimeout(config, mode));
+        if (mode == StorageType.MYSQL) {
             hikariConfig.setJdbcUrl(buildMysqlUrl(config));
             hikariConfig.setUsername(config.mysql().user);
             hikariConfig.setPassword(config.mysql().password);
@@ -39,6 +51,16 @@ public final class DataSourceProvider {
         this.dataSource = new HikariDataSource(hikariConfig);
     }
 
+    private static StorageType resolveMode(PluginConfig config) {
+        if (config.isMysqlStorage()) {
+            return StorageType.MYSQL;
+        }
+        if (config.isSqliteStorage()) {
+            return StorageType.SQLITE;
+        }
+        return StorageType.FLAT;
+    }
+
     public DataSource dataSource() {
         return dataSource;
     }
@@ -47,15 +69,15 @@ public final class DataSourceProvider {
         dataSource.close();
     }
 
-    private int resolvePoolSize(PluginConfig config) {
-        if (config.isMysqlStorage()) {
+    private int resolvePoolSize(PluginConfig config, StorageType mode) {
+        if (mode == StorageType.MYSQL) {
             return config.mysql().poolSize;
         }
         return config.storage().poolSize;
     }
 
-    private long resolveTimeout(PluginConfig config) {
-        if (config.isMysqlStorage()) {
+    private long resolveTimeout(PluginConfig config, StorageType mode) {
+        if (mode == StorageType.MYSQL) {
             return config.mysql().connectionTimeoutMs;
         }
         return config.storage().connectionTimeoutMs;

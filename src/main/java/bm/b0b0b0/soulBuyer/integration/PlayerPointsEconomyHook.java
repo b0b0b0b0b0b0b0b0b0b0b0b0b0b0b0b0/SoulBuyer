@@ -5,9 +5,14 @@ import org.black_ixx.playerpoints.PlayerPoints;
 import org.black_ixx.playerpoints.PlayerPointsAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PlayerPointsEconomyHook {
+
+    public enum ProbeState {
+        READY,
+        PLUGIN_ABSENT,
+        NOT_READY
+    }
 
     private final SoulBuyerDebugLog debug;
     private PlayerPointsAPI api;
@@ -16,27 +21,31 @@ public final class PlayerPointsEconomyHook {
         this.debug = debug;
     }
 
-    public boolean hook() {
+    public ProbeState probe() {
         if (Bukkit.getPluginManager().getPlugin("PlayerPoints") == null) {
             debug.log("playerpoints hook: plugin missing");
-            return false;
+            return ProbeState.PLUGIN_ABSENT;
         }
         if (!Bukkit.getPluginManager().isPluginEnabled("PlayerPoints")) {
             debug.log("playerpoints hook: plugin not enabled yet");
-            return false;
+            return ProbeState.NOT_READY;
         }
         PlayerPoints playerPoints = PlayerPoints.getInstance();
         if (playerPoints == null) {
             debug.log("playerpoints hook: instance null");
-            return false;
+            return ProbeState.NOT_READY;
         }
         api = playerPoints.getAPI();
         if (api == null) {
             debug.log("playerpoints hook: API null");
-            return false;
+            return ProbeState.NOT_READY;
         }
         debug.log("playerpoints hook OK");
-        return true;
+        return ProbeState.READY;
+    }
+
+    public boolean hook() {
+        return probe() == ProbeState.READY;
     }
 
     public boolean available() {

@@ -1,7 +1,9 @@
 package bm.b0b0b0.soulBuyer.database;
 
+import bm.b0b0b0.soulBuyer.bootstrap.SoulBuyerStartupLog;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
+import bm.b0b0b0.soulBuyer.database.migration.StorageTypeMigrationService;
 import bm.b0b0b0.soulBuyer.repository.SqlMarketRepository;
 import bm.b0b0b0.soulBuyer.repository.SqlPlayerAutosellRepository;
 import bm.b0b0b0.soulBuyer.repository.SqlPlayerBoosterRepository;
@@ -25,6 +27,7 @@ public final class StorageBootstrap {
     private final JavaPlugin plugin;
     private final PluginConfig config;
     private final SoulBuyerDebugLog debug;
+    private final SoulBuyerStartupLog startup;
     private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "SoulBuyer-Storage");
         thread.setDaemon(true);
@@ -32,10 +35,16 @@ public final class StorageBootstrap {
     });
     private StorageSession session;
 
-    public StorageBootstrap(JavaPlugin plugin, PluginConfig config, SoulBuyerDebugLog debug) {
+    public StorageBootstrap(
+            JavaPlugin plugin,
+            PluginConfig config,
+            SoulBuyerDebugLog debug,
+            SoulBuyerStartupLog startup
+    ) {
         this.plugin = plugin;
         this.config = config;
         this.debug = debug;
+        this.startup = startup;
     }
 
     public CompletableFuture<StorageSession> start() {
@@ -44,6 +53,7 @@ public final class StorageBootstrap {
 
     public StorageSession startBlocking() {
         debug.boot("storage startBlocking type=" + config.storageType());
+        new StorageTypeMigrationService(plugin, config, debug, startup).migrateIfNeeded();
         if (config.isFlatStorage()) {
             debug.boot("storage mode flat (YAML)");
             session = createFlatSession();

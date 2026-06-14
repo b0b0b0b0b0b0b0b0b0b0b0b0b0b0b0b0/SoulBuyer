@@ -49,11 +49,11 @@ public final class SoulBuyerDebugLog {
     }
 
     public void warn(String message) {
-        plugin.getLogger().warning(line(message));
+        plugin.getLogger().warning(message);
     }
 
     public void error(String message, Throwable throwable) {
-        plugin.getLogger().log(Level.SEVERE, line(message), throwable);
+        plugin.getLogger().log(Level.SEVERE, message, throwable);
     }
 
     private String bootLine(String message) {

@@ -1,0 +1,200 @@
+prefix: "&#D8B4FE» "
+
+categories:
+  ores: "&#55FFFFOres"
+  mobs: "&#FF7EB6Mobs"
+  plants: "&#86EFACPlants"
+  blocks: "&#CBD5E1Blocks"
+  misc: "&#FCD34DMisc"
+
+gui:
+  nav:
+    filler: " "
+    close: "&#FF5555Close"
+    back: "&#D8B4FEBack"
+  buyer:
+    title: "&#4C1D95◆ &#6D28D9B&#7C3AEDu&#9333EAy&#7C3AEDe&#6D28D9r &#4C1D95◆"
+    title-playerpoints: "&#4C1D95◆ &#6D28D9B&#7C3AEDu&#9333EAy&#7C3AEDe&#6D28D9r &#E9D5FF· &#FCD34Dpoints &#4C1D95◆"
+    border: " "
+    stats: "&#D8B4FEYour progress"
+    stats-lore:
+      - "&#9CA3AFPoints: &#E9D5FF{points}"
+      - "&#9CA3AFMultiplier: &#E9D5FF×{multiplier}"
+    category-all: "&#D8B4FEAll"
+    category-all-lore:
+      - "&#9CA3AFAll categories"
+    category-ores: "&#55FFFFOres"
+    category-ores-lore:
+      - "&#9CA3AFOre category"
+    category-mobs: "&#FF7EB6Mobs"
+    category-mobs-lore:
+      - "&#9CA3AFMob drops category"
+    category-plants: "&#86EFACPlants"
+    category-plants-lore:
+      - "&#9CA3AFPlant category"
+    category-blocks: "&#CBD5E1Blocks"
+    category-blocks-lore:
+      - "&#9CA3AFBlock category"
+    category-misc: "&#FCD34DMisc"
+    category-misc-lore:
+      - "&#9CA3AFMisc resources"
+    item-name: "&#E9D5FF{name}"
+    item-lore:
+      - "&#9CA3AFCategory: {category}"
+      - "&#9CA3AFPrice: &#E9D5FF{price} &#9CA3AF/ each"
+      - "&#9CA3AFPoints: &#E9D5FF{points} &#9CA3AF/ each"
+      - "&#9CA3AFMarket: &#E9D5FF×{market}"
+    item-lore-playerpoints:
+      - "&#9CA3AFCategory: {category}"
+      - "&#9CA3AFPayout: &#FCD34D{price} &#9CA3AFpoints / each"
+      - "&#9CA3AFPoints: &#E9D5FF{points} &#9CA3AF/ each"
+      - "&#9CA3AFMarket: &#E9D5FF×{market}"
+    item-sell-hint:
+      - "&#D8B4FEIn inventory: &#FFFFFF{amount}"
+      - "&#86EFAC▶ LMB — sell all"
+      - "&#D8B4FE▶ RMB — choose amount"
+    item-empty-hint:
+      - "&#6B7280In inventory: 0"
+    separator: " "
+    page-prev: "&#D8B4FE← Previous"
+    page-prev-lore:
+      - "&#9CA3AFPrevious page"
+    page-next: "&#D8B4FENext →"
+    page-next-lore:
+      - "&#9CA3AFNext page"
+    rotation-disabled: "disabled"
+    rotation-soon: "soon"
+    market-stats: "&#6D28D9Until refresh"
+    market-stats-lore:
+      - "&#9CA3AFRemaining: &#E9D5FF{rotation_left}"
+      - " "
+      - "&#9CA3AFSold today:"
+      - "&#9CA3AF  &#E9D5FF{sold_today_money} &#9CA3AFcoins · &#E9D5FF{sold_today_points} &#9CA3AFpoints"
+      - "&#9CA3AF  &#E9D5FF{sold_today_stacks} &#9CA3AFstacks"
+      - " "
+      - "&#9CA3AFIn catalog: &#E9D5FF{active_items} &#9CA3AFresources"
+    sort-lore:
+      - "&#9CA3AFClick to apply sort"
+    sort-price-desc: "&#D8B4FEMost expensive"
+    sort-price-asc: "&#C4B5FDCheapest"
+    sort-points-desc: "&#86EFACMost points"
+    sort-name: "&#E9D5FFBy name"
+    autosell: "&#86EFACAutosell"
+    autosell-lore:
+      - "&#9CA3AFStatus: {autosell_state}"
+      - "&#9CA3AFPayout: {autosell_payout}"
+      - "&#86EFAC▶ LMB — settings"
+      - "&#D8B4FE▶ RMB — toggle"
+    autosell-payout-vault: "&#E9D5FFregular (coins)"
+    autosell-payout-playerpoints: "&#FCD34Ddonate (points)"
+    autosell-on: "&#86EFACenabled"
+    autosell-off: "&#FF5555disabled"
+    autosell-disabled: " "
+    autosell-disabled-lore:
+      - "&#6B7280Autosell is disabled"
+      - "&#6B7280on this server"
+    autosell-no-access-lore:
+      - "&#FF5555Donator feature"
+    sell-all: "&#86EFACSell all from inventory"
+    sell-all-lore:
+      - "&#9CA3AFInstantly sell every"
+      - "&#9CA3AFaccepted resource"
+  donate-buyer:
+    title: "&#4C1D95◆ &#FCD34DD&#EAB308o&#FCD34Dn&#EAB308a&#FCD34Dt&#EAB308e &#6D28D9B&#7C3AEDu&#9333EAy&#7C3AEDe&#6D28D9r &#4C1D95◆"
+  quantity:
+    title: "&#4C1D95◆ &#6D28D9S&#7C3AEDe&#9333EAl&#7C3AEDl &#E9D5FF{item} &#4C1D95◆"
+    border: " "
+    separator: " "
+    amount: "&#E9D5FF×{amount} &#9CA3AFof &#FFFFFF{max}"
+    amount-lore:
+      - "&#9CA3AFSelected: &#E9D5FF{amount} &#9CA3AF/ &#FFFFFF{max}"
+      - "&#9CA3AFTotal: &#86EFAC{price} &#9CA3AFcoins"
+      - "&#9CA3AFPoints: &#E9D5FF{points}"
+      - "&#9CA3AFUnit price: &#E9D5FF{unit_price}"
+    button-lore:
+      - "&#9CA3AFClick to apply"
+    minus-10: "&#FF5555−10"
+    minus-5: "&#FF7EB6−5"
+    minus-1: "&#FCD34D−1"
+    plus-1: "&#86EFAC+1"
+    plus-5: "&#55FF55+5"
+    plus-10: "&#00FFAA+10"
+    set-1: "&#D8B4FESet to 1"
+    set-5: "&#D8B4FESet to 5"
+    set-10: "&#D8B4FESet to 10"
+    confirm: "&#86EFACSell ×{amount}"
+    sell-all: "&#E9D5FFSell all ({max})"
+  autosell:
+    title: "&#4C1D95◆ &#6D28D9A&#7C3AEDu&#9333EAt&#7C3AEDo&#6D28D9s&#4C1D95e&#6D28D9l&#6D28D9l &#4C1D95◆"
+    border: " "
+    separator: " "
+    button-lore:
+      - "&#9CA3AFClick to change"
+    category-lore:
+      - "&#9CA3AFAutosell for this category"
+      - "&#D8B4FE▶ Click to toggle on/off"
+      - "&#9CA3AFNow: {category_state}"
+    category-on: "&#86EFACenabled"
+    category-off: "&#FF5555disabled"
+    state-on: "&#86EFACenabled"
+    state-off: "&#FF5555disabled"
+    toggle: "&#E9D5FFAutosell: {state}"
+    trigger: "&#D8B4FEWhen to sell: {trigger}"
+    trigger-pickup: "&#E9D5FFOn pickup"
+    trigger-buyer: "&#E9D5FFOn buyer menu open"
+    trigger-chest: "&#E9D5FFOn chest open"
+    payout: "&#D8B4FEPayout to: {payout}"
+    payout-vault: "&#E9D5FFRegular buyer (coins)"
+    payout-playerpoints: "&#FCD34DDonate buyer (PlayerPoints)"
+    notify: "&#D8B4FENotify: {notify}"
+    notify-actionbar: "&#E9D5FFAction bar"
+    notify-chat: "&#E9D5FFChat"
+    notify-off: "&#6B7280Off"
+    min-price: "&#FCD34DMin price: &#E9D5FF{min_price}"
+    info: "&#D8B4FEWhat is autosell?"
+    info-lore:
+      - "&#9CA3AFSells resources automatically"
+      - "&#9CA3AFfrom enabled categories."
+      - " "
+      - "&#9CA3AFHopper — when to sell:"
+      - "&#9CA3AFpickup, buyer menu,"
+      - "&#9CA3AFor chest contents on open."
+      - " "
+      - "&#9CA3AFGold ingot — payout target"
+      - "&#9CA3AF(regular or donate buyer)."
+      - " "
+      - "&#9CA3AFCategories — what to sell."
+      - "&#9CA3AFBell and nugget — notify"
+      - "&#9CA3AFand minimum unit price."
+
+autosell:
+  no-permission: "&#FF5555Autosell is a donator feature."
+  success: "&#86EFACAutosell: &#E9D5FF{money} &#86EFAC(+&#E9D5FF{points} &#86EFACpoints)"
+  success-playerpoints: "&#86EFACAutosell: &#FCD34D{money} &#86EFACpoints (+&#E9D5FF{points} &#86EFACpts)"
+  success-actionbar: "&#86EFAC+&#E9D5FF{money} &#86EFAC· +&#E9D5FF{points} &#86EFACpts"
+  success-actionbar-playerpoints: "&#86EFAC+&#FCD34D{money} &#86EFACpts · +&#E9D5FF{points} &#86EFACpts"
+
+sell:
+  not-sellable: "&#FF5555{item} is not accepted."
+  in-progress: "&#D8B4FESale already in progress..."
+  empty: "&#FF5555No items to sell."
+  success: "&#86EFACSold &#E9D5FF{count} &#86EFACstacks for &#E9D5FF{money} &#86EFACcoins (+&#E9D5FF{points} &#86EFACpoints)"
+  success-playerpoints: "&#86EFACSold &#E9D5FF{count} &#86EFACstacks for &#FCD34D{money} &#86EFACpoints (+&#E9D5FF{points} &#86EFACpts)"
+  partial: "&#D8B4FESome items were returned — not sellable."
+  failed: "&#FF5555Sale failed. Items returned."
+  returned: "&#D8B4FEUnsold items returned."
+  no-economy: "&#FF5555Economy unavailable. Contact staff."
+  no-economy-playerpoints: "&#FF5555PlayerPoints unavailable. Contact staff."
+
+command:
+  no-permission: "&#FF5555Insufficient permissions."
+  player-only: "&#FF5555Players only."
+  donate-disabled: "&#FF5555Donate buyer is disabled on this server."
+  reload-success: "&#86EFACSoulBuyer reloaded."
+  reload-failed: "&#FF5555SoulBuyer reload failed."
+
+error:
+  database: "&#FF5555SoulBuyer is still loading, please wait..."
+
+rotation:
+  announce: "&#86EFACBuyer refreshed! &#E9D5FF{count} &#86EFACresources in menu — open &#D8B4FE/buyer"

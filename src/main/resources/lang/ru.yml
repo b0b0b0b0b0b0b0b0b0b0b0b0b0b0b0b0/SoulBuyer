@@ -1,0 +1,200 @@
+prefix: "&#D8B4FE» "
+
+categories:
+  ores: "&#55FFFFРуды"
+  mobs: "&#FF7EB6Мобы"
+  plants: "&#86EFACРастения"
+  blocks: "&#CBD5E1Блоки"
+  misc: "&#FCD34DПрочее"
+
+gui:
+  nav:
+    filler: " "
+    close: "&#FF5555Закрыть"
+    back: "&#D8B4FEНазад"
+  buyer:
+    title: "&#4C1D95◆ &#6D28D9С&#7C3AEDк&#9333EAу&#7C3AEDп&#6D28D9щ&#4C1D95и&#6D28D9к &#4C1D95◆"
+    title-playerpoints: "&#4C1D95◆ &#6D28D9С&#7C3AEDк&#9333EAу&#7C3AEDп&#6D28D9щ&#4C1D95и&#6D28D9к &#E9D5FF· &#FCD34Dпоинты &#4C1D95◆"
+    border: " "
+    stats: "&#D8B4FEВаш прогресс"
+    stats-lore:
+      - "&#9CA3AFОчки: &#E9D5FF{points}"
+      - "&#9CA3AFМножитель: &#E9D5FF×{multiplier}"
+    category-all: "&#D8B4FEВсе"
+    category-all-lore:
+      - "&#9CA3AFВсе категории"
+    category-ores: "&#55FFFFРуды"
+    category-ores-lore:
+      - "&#9CA3AFКатегория руд"
+    category-mobs: "&#FF7EB6Мобы"
+    category-mobs-lore:
+      - "&#9CA3AFКатегория мобов"
+    category-plants: "&#86EFACРастения"
+    category-plants-lore:
+      - "&#9CA3AFКатегория растений"
+    category-blocks: "&#CBD5E1Блоки"
+    category-blocks-lore:
+      - "&#9CA3AFКатегория блоков"
+    category-misc: "&#FCD34DПрочее"
+    category-misc-lore:
+      - "&#9CA3AFПрочие ресурсы"
+    item-name: "&#E9D5FF{name}"
+    item-lore:
+      - "&#9CA3AFКатегория: {category}"
+      - "&#9CA3AFЦена: &#E9D5FF{price} &#9CA3AF/ шт."
+      - "&#9CA3AFОчки: &#E9D5FF{points} &#9CA3AF/ шт."
+      - "&#9CA3AFРынок: &#E9D5FF×{market}"
+    item-lore-playerpoints:
+      - "&#9CA3AFКатегория: {category}"
+      - "&#9CA3AFВыплата: &#FCD34D{price} &#9CA3AFпоинтов / шт."
+      - "&#9CA3AFОчки: &#E9D5FF{points} &#9CA3AF/ шт."
+      - "&#9CA3AFРынок: &#E9D5FF×{market}"
+    item-sell-hint:
+      - "&#D8B4FEВ инвентаре: &#FFFFFF{amount}"
+      - "&#86EFAC▶ ЛКМ — продать всё"
+      - "&#D8B4FE▶ ПКМ — выбрать количество"
+    item-empty-hint:
+      - "&#6B7280В инвентаре: 0"
+    separator: " "
+    page-prev: "&#D8B4FE← Предыдущая"
+    page-prev-lore:
+      - "&#9CA3AFСтраница назад"
+    page-next: "&#D8B4FEСледующая →"
+    page-next-lore:
+      - "&#9CA3AFСтраница вперёд"
+    rotation-disabled: "отключена"
+    rotation-soon: "скоро"
+    market-stats: "&#6D28D9До обновления"
+    market-stats-lore:
+      - "&#9CA3AFОсталось: &#E9D5FF{rotation_left}"
+      - " "
+      - "&#9CA3AFСегодня продано:"
+      - "&#9CA3AF  &#E9D5FF{sold_today_money} &#9CA3AFмонет · &#E9D5FF{sold_today_points} &#9CA3AFочков"
+      - "&#9CA3AF  &#E9D5FF{sold_today_stacks} &#9CA3AFпозиций"
+      - " "
+      - "&#9CA3AFВ ассортименте: &#E9D5FF{active_items} &#9CA3AFресурсов"
+    sort-lore:
+      - "&#9CA3AFНажмите — применить сортировку"
+    sort-price-desc: "&#D8B4FEДороже всего"
+    sort-price-asc: "&#C4B5FDДешевле всего"
+    sort-points-desc: "&#86EFACБольше очков"
+    sort-name: "&#E9D5FFПо названию"
+    autosell: "&#86EFACАвтопродажа"
+    autosell-lore:
+      - "&#9CA3AFСтатус: {autosell_state}"
+      - "&#9CA3AFКуда: {autosell_payout}"
+      - "&#86EFAC▶ ЛКМ — настройки"
+      - "&#D8B4FE▶ ПКМ — вкл/выкл"
+    autosell-payout-vault: "&#E9D5FFобычный (монеты)"
+    autosell-payout-playerpoints: "&#FCD34Dдонатный (поинты)"
+    autosell-on: "&#86EFACвключена"
+    autosell-off: "&#FF5555выключена"
+    autosell-disabled: " "
+    autosell-disabled-lore:
+      - "&#6B7280Автопродажа отключена"
+      - "&#6B7280на этом сервере"
+    autosell-no-access-lore:
+      - "&#FF5555Доступно донатерам"
+    sell-all: "&#86EFACПродать всё из инвентаря"
+    sell-all-lore:
+      - "&#9CA3AFМгновенно продать все"
+      - "&#9CA3AFскупаемые ресурсы"
+  donate-buyer:
+    title: "&#4C1D95◆ &#FCD34DД&#EAB308о&#FCD34Dн&#EAB308а&#FCD34Dт&#EAB308н&#FCD34Dы&#EAB308й &#6D28D9с&#7C3AEDк&#9333EAу&#7C3AEDп&#6D28D9щ&#4C1D95и&#6D28D9к &#4C1D95◆"
+  quantity:
+    title: "&#4C1D95◆ &#6D28D9П&#7C3AEDр&#9333EAо&#7C3AEDд&#6D28D9а&#4C1D95ж&#6D28D9а &#E9D5FF{item} &#4C1D95◆"
+    border: " "
+    separator: " "
+    amount: "&#E9D5FF×{amount} &#9CA3AFиз &#FFFFFF{max}"
+    amount-lore:
+      - "&#9CA3AFВыбрано: &#E9D5FF{amount} &#9CA3AF/ &#FFFFFF{max}"
+      - "&#9CA3AFСумма: &#86EFAC{price} &#9CA3AFмонет"
+      - "&#9CA3AFОчки: &#E9D5FF{points}"
+      - "&#9CA3AFЦена за шт.: &#E9D5FF{unit_price}"
+    button-lore:
+      - "&#9CA3AFНажмите для действия"
+    minus-10: "&#FF5555−10"
+    minus-5: "&#FF7EB6−5"
+    minus-1: "&#FCD34D−1"
+    plus-1: "&#86EFAC+1"
+    plus-5: "&#55FF55+5"
+    plus-10: "&#00FFAA+10"
+    set-1: "&#D8B4FEУстановить 1"
+    set-5: "&#D8B4FEУстановить 5"
+    set-10: "&#D8B4FEУстановить 10"
+    confirm: "&#86EFACПродать ×{amount}"
+    sell-all: "&#E9D5FFПродать всё ({max})"
+  autosell:
+    title: "&#4C1D95◆ &#6D28D9А&#7C3AEDв&#9333EAт&#7C3AEDо&#6D28D9п&#4C1D95р&#6D28D9о&#4C1D95д&#6D28D9а&#4C1D95ж&#6D28D9а &#4C1D95◆"
+    border: " "
+    separator: " "
+    button-lore:
+      - "&#9CA3AFНажмите для изменения"
+    category-lore:
+      - "&#9CA3AFАвтопродажа ресурсов категории"
+      - "&#D8B4FE▶ Клик — включить или выключить"
+      - "&#9CA3AFСейчас: {category_state}"
+    category-on: "&#86EFACвключена"
+    category-off: "&#FF5555выключена"
+    state-on: "&#86EFACвключена"
+    state-off: "&#FF5555выключена"
+    toggle: "&#E9D5FFАвтопродажа: {state}"
+    trigger: "&#D8B4FEКогда продавать: {trigger}"
+    trigger-pickup: "&#E9D5FFПри подборе"
+    trigger-buyer: "&#E9D5FFПри открытии меню"
+    trigger-chest: "&#E9D5FFПри открытии сундука"
+    payout: "&#D8B4FEКуда продавать: {payout}"
+    payout-vault: "&#E9D5FFОбычный скупщик (монеты)"
+    payout-playerpoints: "&#FCD34DДонатный (PlayerPoints)"
+    notify: "&#D8B4FEУведомления: {notify}"
+    notify-actionbar: "&#E9D5FFAction bar"
+    notify-chat: "&#E9D5FFЧат"
+    notify-off: "&#6B7280Выкл"
+    min-price: "&#FCD34DМин. цена: &#E9D5FF{min_price}"
+    info: "&#D8B4FEЧто такое автопродажа?"
+    info-lore:
+      - "&#9CA3AFАвтоматически продаёт ресурсы"
+      - "&#9CA3AFиз выбранных категорий."
+      - " "
+      - "&#9CA3AFВоронка — когда продавать:"
+      - "&#9CA3AFподбор, меню скупщика"
+      - "&#9CA3AFили содержимое сундука."
+      - " "
+      - "&#9CA3AFСлиток — куда идёт выплата"
+      - "&#9CA3AF(обычный или донатный скупщик)."
+      - " "
+      - "&#9CA3AFКатегории — что продавать."
+      - "&#9CA3AFКолокол и самородок —"
+      - "&#9CA3AFуведомления и мин. цена."
+
+autosell:
+  no-permission: "&#FF5555Автопродажа доступна донатерам."
+  success: "&#86EFACАвтопродажа: &#E9D5FF{money} &#86EFAC(+&#E9D5FF{points} &#86EFACочков)"
+  success-playerpoints: "&#86EFACАвтопродажа: &#FCD34D{money} &#86EFACпоинтов (+&#E9D5FF{points} &#86EFACочков)"
+  success-actionbar: "&#86EFAC+&#E9D5FF{money} &#86EFAC· +&#E9D5FF{points} &#86EFACочков"
+  success-actionbar-playerpoints: "&#86EFAC+&#FCD34D{money} &#86EFACпоинтов · +&#E9D5FF{points} &#86EFACочков"
+
+sell:
+  not-sellable: "&#FF5555{item} не скупается."
+  in-progress: "&#D8B4FEПродажа уже выполняется..."
+  empty: "&#FF5555Нет предметов для продажи."
+  success: "&#86EFACПродано &#E9D5FF{count} &#86EFACпоз. на &#E9D5FF{money} &#86EFACмонет (+&#E9D5FF{points} &#86EFACочков)"
+  success-playerpoints: "&#86EFACПродано &#E9D5FF{count} &#86EFACпоз. на &#FCD34D{money} &#86EFACпоинтов (+&#E9D5FF{points} &#86EFACочков)"
+  partial: "&#D8B4FEЧасть предметов не скупается и возвращена."
+  failed: "&#FF5555Ошибка продажи. Предметы возвращены."
+  returned: "&#D8B4FEНепроданные предметы возвращены."
+  no-economy: "&#FF5555Экономика недоступна. Обратитесь к администрации."
+  no-economy-playerpoints: "&#FF5555PlayerPoints недоступен. Обратитесь к администрации."
+
+command:
+  no-permission: "&#FF5555Недостаточно прав."
+  player-only: "&#FF5555Только для игроков."
+  donate-disabled: "&#FF5555Донатный скупщик отключён на этом сервере."
+  reload-success: "&#86EFACSoulBuyer перезагружен."
+  reload-failed: "&#FF5555Ошибка перезагрузки SoulBuyer."
+
+error:
+  database: "&#FF5555SoulBuyer ещё загружается, подождите..."
+
+rotation:
+  announce: "&#86EFACСкупщик обновился! &#E9D5FF{count} &#86EFACресурсов в меню — открой &#D8B4FE/buyer"

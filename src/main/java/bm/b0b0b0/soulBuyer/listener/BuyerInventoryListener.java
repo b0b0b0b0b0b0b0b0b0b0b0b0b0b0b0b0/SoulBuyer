@@ -44,21 +44,24 @@ public final class BuyerInventoryListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
-        if (holder instanceof BuyerMenu buyerMenu) {
-            if (buyerMenu.isProcessing()) {
-                return;
+        switch (holder) {
+            case BuyerMenu buyerMenu -> {
+                if (buyerMenu.isProcessing()) {
+                    return;
+                }
+                boolean rightClick = event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT;
+                buyerMenu.handleClick(rawSlot, rightClick);
             }
-            boolean rightClick = event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT;
-            buyerMenu.handleClick(rawSlot, rightClick);
-        } else if (holder instanceof BuyerQuantityMenu quantityMenu) {
-            if (quantityMenu.isProcessing()) {
-                return;
+            case BuyerQuantityMenu quantityMenu -> {
+                if (quantityMenu.isProcessing()) {
+                    return;
+                }
+                quantityMenu.handleClick(rawSlot);
             }
-            quantityMenu.handleClick(rawSlot);
-        } else if (holder instanceof BuyerAutosellMenu autosellMenu) {
-            autosellMenu.handleClick(rawSlot);
-        } else if (holder instanceof BuyerBoostersMenu boostersMenu) {
-            boostersMenu.handleClick(rawSlot);
+            case BuyerAutosellMenu autosellMenu -> autosellMenu.handleClick(rawSlot);
+            case BuyerBoostersMenu boostersMenu -> boostersMenu.handleClick(rawSlot);
+            default -> {
+            }
         }
     }
 

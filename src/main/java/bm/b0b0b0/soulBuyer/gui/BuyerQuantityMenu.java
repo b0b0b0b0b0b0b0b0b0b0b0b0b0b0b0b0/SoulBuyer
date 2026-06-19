@@ -184,7 +184,7 @@ public final class BuyerQuantityMenu implements InventoryHolder {
             render();
             return;
         }
-        selectedAmount = Math.clamp(maxAmount, 1, amount);
+        selectedAmount = Math.clamp(amount, 1, maxAmount);
         render();
     }
 

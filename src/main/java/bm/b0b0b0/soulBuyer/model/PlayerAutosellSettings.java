@@ -2,7 +2,6 @@ package bm.b0b0b0.soulBuyer.model;
 
 import bm.b0b0b0.soulBuyer.autosell.AutosellPayout;
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;

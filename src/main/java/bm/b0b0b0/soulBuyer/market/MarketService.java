@@ -3,12 +3,11 @@ package bm.b0b0b0.soulBuyer.market;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.repository.MarketRepository;
 import bm.b0b0b0.soulBuyer.sync.RedisBootstrap;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 public final class MarketService {
 
@@ -112,6 +111,6 @@ public final class MarketService {
         if (!Double.isFinite(value)) {
             return 1.0D;
         }
-        return Math.clamp(value, config.minMarketCoefficient(), 1.0D);
+        return Math.max(config.minMarketCoefficient(), Math.min(1.0D, value));
     }
 }

@@ -1,7 +1,6 @@
 package bm.b0b0b0.soulBuyer.gui;
 
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
-
 import java.util.HashMap;
 import java.util.Map;
 

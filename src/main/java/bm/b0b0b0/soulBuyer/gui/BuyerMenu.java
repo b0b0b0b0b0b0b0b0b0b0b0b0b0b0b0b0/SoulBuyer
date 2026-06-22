@@ -1,8 +1,8 @@
 package bm.b0b0b0.soulBuyer.gui;
 
+import bm.b0b0b0.soulBuyer.booster.BoosterService;
 import bm.b0b0b0.soulBuyer.autosell.AutosellPayout;
 import bm.b0b0b0.soulBuyer.autosell.AutosellService;
-import bm.b0b0b0.soulBuyer.booster.BoosterService;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
@@ -16,14 +16,18 @@ import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.service.BuyerStatsService;
 import bm.b0b0b0.soulBuyer.service.InventorySellHelper;
 import bm.b0b0b0.soulBuyer.service.SellService;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.*;
 
 public final class BuyerMenu implements InventoryHolder {
 
@@ -466,8 +470,8 @@ public final class BuyerMenu implements InventoryHolder {
                 ? autosellPayoutKey(autosellSettings.payoutTarget())
                 : autosellPayoutKey(
                 config.defaultOpenPayoutMode() == BuyerPayoutMode.PLAYER_POINTS
-                ? AutosellPayout.PLAYER_POINTS
-                : AutosellPayout.VAULT
+                        ? AutosellPayout.PLAYER_POINTS
+                        : AutosellPayout.VAULT
         );
         String[] autosellPairs = mergePairs(
                 new String[]{

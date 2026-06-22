@@ -1,7 +1,6 @@
 package bm.b0b0b0.soulBuyer.database.migration;
 
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;

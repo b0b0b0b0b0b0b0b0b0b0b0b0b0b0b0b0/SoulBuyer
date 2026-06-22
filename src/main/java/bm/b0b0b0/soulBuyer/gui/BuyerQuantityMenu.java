@@ -96,6 +96,7 @@ public final class BuyerQuantityMenu implements InventoryHolder {
         );
         this.inventory = Bukkit.createInventory(this, quantityGui.size, title);
         render();
+        sellService.preloadSellLimitUsage(player);
     }
 
     @Override

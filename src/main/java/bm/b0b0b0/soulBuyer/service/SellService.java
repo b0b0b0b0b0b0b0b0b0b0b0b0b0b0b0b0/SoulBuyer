@@ -10,6 +10,7 @@ import bm.b0b0b0.soulBuyer.market.PriceQuoteService;
 import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
+import bm.b0b0b0.soulBuyer.model.PlayerSellLimitUsage;
 import bm.b0b0b0.soulBuyer.model.SellLine;
 import bm.b0b0b0.soulBuyer.model.SellLimitSplit;
 import bm.b0b0b0.soulBuyer.model.SellQuote;
@@ -101,19 +102,27 @@ public final class SellService {
             Runnable onComplete,
             BuyerPayoutMode payoutMode
     ) {
-        if (isProcessing(player.getUniqueId())) {
+        UUID playerId = player.getUniqueId();
+        if (!context.secureStorage().tryBegin(playerId)) {
             context.messageService().send(player, "sell.in-progress");
+            complete(onComplete);
+            return;
+        }
+        if (isLimitExhaustedForItem(player, itemId)) {
+            context.secureStorage().cancelLock(playerId);
+            context.messageService().send(player, "sell.limit-reached");
+            complete(onComplete);
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAmount(player, context.itemRegistry(), itemId, amount);
         if (collected.isEmpty()) {
+            context.secureStorage().cancelLock(playerId);
             context.messageService().send(player, "sell.empty");
-            if (onComplete != null) {
-                onComplete.run();
-            }
+            complete(onComplete);
             return;
         }
-        beginSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
+        context.secureStorage().replaceSecuredItems(playerId, collected);
+        continueSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
     }
 
     public void sellFromContainer(
@@ -178,21 +187,29 @@ public final class SellService {
             boolean notifyWhenEmpty,
             BuyerPayoutMode payoutMode
     ) {
-        if (isProcessing(player.getUniqueId())) {
+        UUID playerId = player.getUniqueId();
+        if (!context.secureStorage().tryBegin(playerId)) {
             context.messageService().send(player, "sell.in-progress");
+            complete(onComplete);
+            return;
+        }
+        if (isLimitExhaustedForFilter(player, filter)) {
+            context.secureStorage().cancelLock(playerId);
+            context.messageService().send(player, "sell.limit-reached");
+            complete(onComplete);
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAndRemove(player, context.itemRegistry(), filter);
         if (collected.isEmpty()) {
+            context.secureStorage().cancelLock(playerId);
             if (notifyWhenEmpty) {
                 context.messageService().send(player, "sell.empty");
             }
-            if (onComplete != null) {
-                onComplete.run();
-            }
+            complete(onComplete);
             return;
         }
-        beginSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
+        context.secureStorage().replaceSecuredItems(playerId, collected);
+        continueSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
     }
 
     public void sellFromContainer(
@@ -203,24 +220,25 @@ public final class SellService {
             Runnable onComplete,
             BuyerPayoutMode payoutMode
     ) {
-        if (isProcessing(player.getUniqueId())) {
+        UUID playerId = player.getUniqueId();
+        if (!context.secureStorage().tryBegin(playerId)) {
             context.messageService().send(player, "sell.in-progress");
+            complete(onComplete);
             return;
         }
         if (!AutosellInventoryGuard.isStorageContainer(container)) {
-            if (onComplete != null) {
-                onComplete.run();
-            }
+            context.secureStorage().cancelLock(playerId);
+            complete(onComplete);
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAndRemove(container, context.itemRegistry(), filter);
         if (collected.isEmpty()) {
-            if (onComplete != null) {
-                onComplete.run();
-            }
+            context.secureStorage().cancelLock(playerId);
+            complete(onComplete);
             return;
         }
-        beginSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
+        context.secureStorage().replaceSecuredItems(playerId, collected);
+        continueSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
     }
 
     public void beginSecuredSale(Player player, List<ItemStack> sellStacks, List<ItemStack> returnStacks, Runnable onComplete) {
@@ -252,28 +270,44 @@ public final class SellService {
             Runnable onComplete,
             BuyerPayoutMode payoutMode
     ) {
-        BuyerPayoutMode mode = payoutMode == null ? context.config().defaultOpenPayoutMode() : payoutMode;
         UUID playerId = player.getUniqueId();
-        if (context.secureStorage().isProcessing(playerId)) {
+        if (!context.secureStorage().tryBegin(playerId)) {
             context.messageService().send(player, "sell.in-progress");
-            return;
-        }
-        if (!context.economyPayoutRouter().available(mode)) {
-            context.messageService().send(player, noEconomyKey(mode));
             ItemReturner.returnItems(player, sellStacks);
             ItemReturner.returnItems(player, returnStacks);
-            if (onComplete != null) {
-                onComplete.run();
-            }
+            complete(onComplete);
             return;
         }
-        context.secureStorage().markProcessing(playerId, concat(cloneStacks(sellStacks), cloneStacks(returnStacks)));
+        context.secureStorage().replaceSecuredItems(
+                playerId,
+                concat(cloneStacks(sellStacks), cloneStacks(returnStacks))
+        );
+        continueSecuredSale(player, sellStacks, returnStacks, delivery, onComplete, payoutMode);
+    }
+
+    private void continueSecuredSale(
+            Player player,
+            List<ItemStack> sellStacks,
+            List<ItemStack> returnStacks,
+            SaleDelivery delivery,
+            Runnable onComplete,
+            BuyerPayoutMode payoutMode
+    ) {
+        BuyerPayoutMode mode = payoutMode == null ? context.config().defaultOpenPayoutMode() : payoutMode;
+        UUID playerId = player.getUniqueId();
+        if (!context.economyPayoutRouter().available(mode)) {
+            context.messageService().send(player, noEconomyKey(mode));
+            context.secureStorage().tryAbort(playerId).forEach(stack -> ItemReturner.give(player, stack));
+            complete(onComplete);
+            return;
+        }
         debug.log("sell begin " + player.getName() + " stacks=" + sellStacks.size() + " return=" + returnStacks.size());
 
         String periodKey = context.sellLimitService().periodKey();
         context.playerProgressRepository().find(playerId).thenCompose(progress -> {
             context.cacheProgress(progress);
             return context.sellLimitRepository().find(playerId, periodKey).thenApply(usage -> {
+                context.cacheSellLimitUsage(usage);
                 SellLimitSplit split = context.sellLimitService().split(player, sellStacks, usage);
                 SellQuote quote = context.priceQuoteService().quote(player, split.sellStacks(), progress);
                 return new PreparedSale(split, quote);
@@ -287,14 +321,69 @@ public final class SellService {
                             : "sell.empty";
                     context.messageService().send(player, key);
                 }
-                if (onComplete != null) {
-                    onComplete.run();
-                }
+                complete(onComplete);
                 return;
             }
             List<ItemStack> mergedReturn = concat(returnStacks, prepared.split().returnStacks());
             finalizeSale(player, prepared.quote(), mergedReturn, delivery, onComplete, mode, periodKey);
-        }));
+        })).exceptionally(throwable -> {
+            debug.warn("sell async failed for " + player.getName() + ": " + throwable.getMessage());
+            runMain(() -> {
+                context.secureStorage().tryAbort(playerId).forEach(stack -> ItemReturner.give(player, stack));
+                complete(onComplete);
+            });
+            return null;
+        });
+    }
+
+    public void preloadSellLimitUsage(Player player) {
+        if (!context.sellLimitService().enabled()) {
+            return;
+        }
+        UUID playerId = player.getUniqueId();
+        String periodKey = context.sellLimitService().periodKey();
+        context.sellLimitRepository().find(playerId, periodKey).thenAccept(usage ->
+                runMain(() -> context.cacheSellLimitUsage(usage))
+        );
+    }
+
+    private boolean isLimitExhaustedForFilter(Player player, Predicate<SellableItemDefinition> filter) {
+        if (!context.sellLimitService().enabled()) {
+            return false;
+        }
+        PlayerSellLimitUsage usage = context.cachedSellLimitUsage(player.getUniqueId());
+        if (usage == null || !context.sellLimitService().periodKey().equals(usage.periodKey())) {
+            return false;
+        }
+        return !context.sellLimitService().hasSellCapacity(player, usage, filter);
+    }
+
+    private boolean isLimitExhaustedForItem(Player player, String itemId) {
+        if (!context.sellLimitService().enabled()) {
+            return false;
+        }
+        PlayerSellLimitUsage usage = context.cachedSellLimitUsage(player.getUniqueId());
+        if (usage == null || !context.sellLimitService().periodKey().equals(usage.periodKey())) {
+            return false;
+        }
+        return !context.sellLimitService().hasSellCapacity(player, usage, itemId);
+    }
+
+    private void complete(Runnable onComplete) {
+        if (onComplete != null) {
+            onComplete.run();
+        }
+    }
+
+    private void applySellLimitCache(UUID playerId, String periodKey, List<SellLine> lines) {
+        PlayerSellLimitUsage cached = context.cachedSellLimitUsage(playerId);
+        Map<String, Integer> sold = cached != null && periodKey.equals(cached.periodKey())
+                ? new HashMap<>(cached.soldByItemId())
+                : new HashMap<>();
+        for (SellLine line : lines) {
+            sold.merge(line.itemId(), line.amount(), Integer::sum);
+        }
+        context.cacheSellLimitUsage(new PlayerSellLimitUsage(playerId, periodKey, sold));
     }
 
     private record PreparedSale(SellLimitSplit split, SellQuote quote) {
@@ -360,6 +449,7 @@ public final class SellService {
         context.saleLogRepository().enqueue(playerId, context.config().serverId(), quote.lines(), quote.totalMoney(), quote.totalPoints());
         context.buyerStatsService().recordSale(playerId, quote.totalMoney(), quote.totalPoints(), quote.lines().size());
         context.sellLimitRepository().recordSale(playerId, periodKey, quote.lines());
+        applySellLimitCache(playerId, periodKey, quote.lines());
 
         context.secureStorage().commitFinalize(playerId);
         ItemReturner.returnItems(player, returnStacks);
@@ -468,6 +558,10 @@ public final class SellService {
         bm.b0b0b0.soulBuyer.model.PlayerProgress cachedProgress(UUID playerId);
 
         void cacheProgress(bm.b0b0b0.soulBuyer.model.PlayerProgress progress);
+
+        bm.b0b0b0.soulBuyer.model.PlayerSellLimitUsage cachedSellLimitUsage(UUID playerId);
+
+        void cacheSellLimitUsage(bm.b0b0b0.soulBuyer.model.PlayerSellLimitUsage usage);
 
         BuyerStatsService buyerStatsService();
 

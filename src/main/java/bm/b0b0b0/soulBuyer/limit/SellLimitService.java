@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.bukkit.Material;
+import java.util.function.Predicate;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -63,6 +63,37 @@ public final class SellLimitService {
             return Integer.MAX_VALUE;
         }
         return Math.max(0, perItemLimit(player) - usage.sold(itemId));
+    }
+
+    public boolean hasSellCapacity(Player player, PlayerSellLimitUsage usage, String itemId) {
+        return remaining(player, usage, itemId) > 0;
+    }
+
+    public boolean hasSellCapacity(
+            Player player,
+            PlayerSellLimitUsage usage,
+            Predicate<SellableItemDefinition> filter
+    ) {
+        if (!enabled()) {
+            return true;
+        }
+        for (ItemStack stack : player.getInventory().getStorageContents()) {
+            if (stack == null || stack.getType().isAir()) {
+                continue;
+            }
+            Optional<SellableItemDefinition> definitionOptional = itemRegistry.findInPool(stack);
+            if (definitionOptional.isEmpty()) {
+                continue;
+            }
+            SellableItemDefinition definition = definitionOptional.get();
+            if (!filter.test(definition)) {
+                continue;
+            }
+            if (remaining(player, usage, definition.id()) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public SellLimitSplit split(Player player, List<ItemStack> stacks, PlayerSellLimitUsage usage) {

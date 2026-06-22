@@ -128,6 +128,7 @@ public final class BuyerMenu implements InventoryHolder {
         this.categoryIconAnimator.bind(() -> categoryFilter, this::isProcessing);
         render();
         liveStatsUpdater.start();
+        sellService.preloadSellLimitUsage(player);
     }
 
     @Override

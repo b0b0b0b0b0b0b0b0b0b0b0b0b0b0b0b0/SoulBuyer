@@ -69,9 +69,9 @@ public final class StorageMetaStore {
     }
 
     private static void applyComments(YamlConfiguration yaml) {
-        yaml.options().header(String.join("\n", List.of(
+        yaml.options().setHeader(List.of(
                 "╔══════════════════════════════════════════════════════════════════╗",
-                "║  НЕ РЕДАКТИРОВАТЬ ЭТОТ ФАЙЛ ВРУЧНУЮ!                             ║",
+                "║  НЕ РЕДАКТИРОВАТЬ ЭТО ФАЙЛ ВРУЧНУЮ!                             ║",
                 "╚══════════════════════════════════════════════════════════════════╝",
                 "",
                 "Служебный файл SoulBuyer. Пишется и обновляется только плагином при старте.",
@@ -84,8 +84,7 @@ public final class StorageMetaStore {
                 "После смены storage-type перезапустите сервер — конвертация выполнится сама.",
                 "",
                 "Старые файлы/БД после конвертации не удаляются (можно откатить вручную)."
-        )));
-        yaml.options().copyHeader(true);
+        ));
         yaml.setComments(KEY_ACTIVE_TYPE, List.of(
                 "Последний активный тип хранилища: flat | sqlite | mysql.",
                 "Обновляется плагином. Не менять вручную."

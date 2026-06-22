@@ -15,6 +15,25 @@ public final class SellSecureStorage {
         return sessions.containsKey(playerId);
     }
 
+    public boolean tryBegin(UUID playerId) {
+        return sessions.putIfAbsent(playerId, new SecureSession(SecurePhase.LOCKED, new ArrayList<>())) == null;
+    }
+
+    public void replaceSecuredItems(UUID playerId, List<ItemStack> securedItems) {
+        SecureSession session = sessions.get(playerId);
+        if (session == null) {
+            return;
+        }
+        synchronized (session) {
+            session.items.clear();
+            session.items.addAll(cloneAll(securedItems));
+        }
+    }
+
+    public void cancelLock(UUID playerId) {
+        sessions.remove(playerId);
+    }
+
     public void markProcessing(UUID playerId, List<ItemStack> securedItems) {
         sessions.put(playerId, new SecureSession(SecurePhase.LOCKED, cloneAll(securedItems)));
     }

@@ -9,6 +9,7 @@ import bm.b0b0b0.soulBuyer.market.MarketService;
 import bm.b0b0b0.soulBuyer.market.PriceQuoteService;
 import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
+import bm.b0b0b0.soulBuyer.model.PlayerSellLimitUsage;
 import bm.b0b0b0.soulBuyer.progression.ProgressionService;
 import bm.b0b0b0.soulBuyer.booster.BoosterService;
 import bm.b0b0b0.soulBuyer.limit.SellLimitService;
@@ -47,6 +48,7 @@ public final class SoulBuyerRuntime implements SellService.PluginContext {
     private SellLimitService sellLimitService;
     private CatalogRotationService catalogRotationService;
     private final Map<UUID, PlayerProgress> progressCache = new ConcurrentHashMap<>();
+    private final Map<UUID, PlayerSellLimitUsage> sellLimitCache = new ConcurrentHashMap<>();
     private volatile boolean ready;
 
     public boolean isReady() {
@@ -187,5 +189,18 @@ public final class SoulBuyerRuntime implements SellService.PluginContext {
     @Override
     public void cacheProgress(PlayerProgress progress) {
         progressCache.put(progress.playerId(), progress);
+    }
+
+    @Override
+    public PlayerSellLimitUsage cachedSellLimitUsage(UUID playerId) {
+        return sellLimitCache.get(playerId);
+    }
+
+    @Override
+    public void cacheSellLimitUsage(PlayerSellLimitUsage usage) {
+        if (usage == null) {
+            return;
+        }
+        sellLimitCache.put(usage.playerId(), usage);
     }
 }

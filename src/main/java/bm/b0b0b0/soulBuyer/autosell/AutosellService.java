@@ -162,6 +162,9 @@ public final class AutosellService {
         if (!canAccess(player) || chestInventory == null) {
             return;
         }
+        if (!AutosellInventoryGuard.isStorageContainer(chestInventory)) {
+            return;
+        }
         PlayerAutosellSettings autosellSettings = settings(player);
         if (!autosellSettings.enabled() || !AutosellTrigger.isChest(autosellSettings.trigger())) {
             return;

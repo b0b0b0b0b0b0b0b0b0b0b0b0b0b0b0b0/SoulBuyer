@@ -5,6 +5,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.inventory.Inventory;
 
 public final class AutosellContainerListener implements Listener {
 
@@ -19,9 +20,10 @@ public final class AutosellContainerListener implements Listener {
         if (!(event.getPlayer() instanceof Player player)) {
             return;
         }
-        if (!AutosellInventoryGuard.isStorageContainer(event.getInventory())) {
+        Inventory topInventory = event.getView().getTopInventory();
+        if (!AutosellInventoryGuard.isStorageContainer(topInventory)) {
             return;
         }
-        autosellService.trySellChestOnOpen(player, event.getInventory());
+        autosellService.trySellChestOnOpen(player, topInventory);
     }
 }

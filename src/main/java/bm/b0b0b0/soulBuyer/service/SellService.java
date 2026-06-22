@@ -1,5 +1,6 @@
 package bm.b0b0b0.soulBuyer.service;
 
+import bm.b0b0b0.soulBuyer.autosell.AutosellInventoryGuard;
 import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
 import bm.b0b0b0.soulBuyer.integration.EconomyPayoutRouter;
 import bm.b0b0b0.soulBuyer.model.BuyerPayoutMode;
@@ -204,6 +205,12 @@ public final class SellService {
     ) {
         if (isProcessing(player.getUniqueId())) {
             context.messageService().send(player, "sell.in-progress");
+            return;
+        }
+        if (!AutosellInventoryGuard.isStorageContainer(container)) {
+            if (onComplete != null) {
+                onComplete.run();
+            }
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAndRemove(container, context.itemRegistry(), filter);

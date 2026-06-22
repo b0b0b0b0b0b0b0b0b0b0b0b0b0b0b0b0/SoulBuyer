@@ -1,13 +1,8 @@
 package bm.b0b0b0.soulBuyer.config;
 
-import bm.b0b0b0.soulBuyer.config.settings.GuiAutosellSettings;
-import bm.b0b0b0.soulBuyer.config.settings.GuiBoostersSettings;
-import bm.b0b0b0.soulBuyer.config.settings.GuiBuyerSettings;
-import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
-import bm.b0b0b0.soulBuyer.config.settings.GuiQuantitySettings;
-import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerItemsSettings;
-import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
+import bm.b0b0b0.soulBuyer.config.settings.*;
 import bm.b0b0b0.soulBuyer.model.BuyerPayoutMode;
+
 import java.util.List;
 import java.util.Map;
 

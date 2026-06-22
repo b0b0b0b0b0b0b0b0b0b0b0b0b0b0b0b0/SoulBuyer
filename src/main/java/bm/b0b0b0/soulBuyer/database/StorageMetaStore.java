@@ -1,13 +1,14 @@
 package bm.b0b0b0.soulBuyer.database;
 
-import java.util.List;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public final class StorageMetaStore {
 

@@ -9,12 +9,13 @@ import bm.b0b0b0.soulBuyer.model.PlayerProgress;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.repository.PlayerProgressRepository;
 import bm.b0b0b0.soulBuyer.service.SellService;
-import java.util.function.BooleanSupplier;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
+import java.util.function.BooleanSupplier;
 
 public final class SoulBuyerApiImpl implements SoulBuyerApi {
 

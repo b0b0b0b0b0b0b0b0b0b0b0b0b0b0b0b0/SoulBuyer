@@ -1,12 +1,13 @@
 package bm.b0b0b0.soulBuyer.config.settings;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import net.elytrium.serializer.annotations.Comment;
 import net.elytrium.serializer.annotations.CommentValue;
 import net.elytrium.serializer.annotations.NewLine;
 import net.elytrium.serializer.language.object.YamlSerializable;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class GuiQuantitySettings extends YamlSerializable {
 
@@ -15,19 +16,19 @@ public final class GuiQuantitySettings extends YamlSerializable {
     }
 
     @Comment(@CommentValue("Ключ заголовка в lang/*.yml"))
-    public String titleKey = "gui.quantity.title";
+    public final String titleKey = "gui.quantity.title";
 
     @Comment(@CommentValue("54 = 6 рядов"))
-    public int size = 54;
+    public final int size = 54;
 
     @Comment(@CommentValue("Слот превью продаваемого предмета"))
-    public int previewSlot = 31;
+    public final int previewSlot = 31;
 
     @Comment(@CommentValue("Слот счётчика выбранного количества"))
-    public int amountInfoSlot = 22;
+    public final int amountInfoSlot = 22;
 
     @NewLine
-    public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
+    public final Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 
     private static Map<String, GuiGeneralSettings.GuiElementSettings> defaultElements() {
         Map<String, GuiGeneralSettings.GuiElementSettings> elements = new LinkedHashMap<>();

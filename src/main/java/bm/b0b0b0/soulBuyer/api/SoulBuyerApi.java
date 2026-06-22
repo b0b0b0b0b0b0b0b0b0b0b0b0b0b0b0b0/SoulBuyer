@@ -2,11 +2,12 @@ package bm.b0b0b0.soulBuyer.api;
 
 import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 public interface SoulBuyerApi {
 

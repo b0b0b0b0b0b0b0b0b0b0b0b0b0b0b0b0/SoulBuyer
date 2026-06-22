@@ -2,15 +2,16 @@ package bm.b0b0b0.soulBuyer.gui;
 
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.message.MessageService;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public final class GuiItemFactory {
 

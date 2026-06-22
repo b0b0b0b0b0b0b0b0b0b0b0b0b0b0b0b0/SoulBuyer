@@ -1,11 +1,12 @@
 package bm.b0b0b0.soulBuyer.item;
 
-import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.Locale;
 
 public final class ItemNameResolver {
 

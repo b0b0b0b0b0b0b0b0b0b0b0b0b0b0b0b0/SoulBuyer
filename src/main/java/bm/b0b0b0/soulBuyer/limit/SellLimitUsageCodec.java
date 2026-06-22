@@ -1,10 +1,11 @@
 package bm.b0b0b0.soulBuyer.limit;
 
 import bm.b0b0b0.soulBuyer.model.PlayerSellLimitUsage;
+import org.bukkit.configuration.file.YamlConfiguration;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 public final class SellLimitUsageCodec {
 

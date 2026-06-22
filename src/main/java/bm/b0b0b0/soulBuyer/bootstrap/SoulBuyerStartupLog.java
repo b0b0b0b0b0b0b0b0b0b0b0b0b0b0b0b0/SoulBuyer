@@ -48,11 +48,11 @@ public final class SoulBuyerStartupLog {
     }
 
     public void stepOk(String message) {
-        console.sendMessage(PREFIX + GREEN + "\u2713 " + RESET + message);
+        console.sendMessage(PREFIX + GREEN + "✓ " + RESET + message);
     }
 
     public void stepFail(String message) {
-        console.sendMessage(PREFIX + RED + "\u274c " + RESET + message);
+        console.sendMessage(PREFIX + RED + "❌ " + RESET + message);
     }
 
     public void stepWaiting(String message) {
@@ -60,7 +60,7 @@ public final class SoulBuyerStartupLog {
     }
 
     public void stepSkipped(String message) {
-        console.sendMessage(PREFIX + GRAY + "\u2014 " + message + RESET);
+        console.sendMessage(PREFIX + GRAY + "— " + message + RESET);
     }
 
     public void unload() {

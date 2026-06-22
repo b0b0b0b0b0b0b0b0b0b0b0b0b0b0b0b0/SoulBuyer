@@ -2,6 +2,8 @@ package bm.b0b0b0.soulBuyer.repository;
 
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
 import bm.b0b0b0.soulBuyer.util.SimpleJsonDoubles;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,7 +12,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import javax.sql.DataSource;
 
 public final class SqlPlayerProgressRepository implements PlayerProgressRepository {
 

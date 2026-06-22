@@ -1,9 +1,10 @@
 package bm.b0b0b0.soulBuyer.config.settings;
 
-import java.util.Map;
 import net.elytrium.serializer.annotations.Comment;
 import net.elytrium.serializer.annotations.CommentValue;
 import net.elytrium.serializer.language.object.YamlSerializable;
+
+import java.util.Map;
 
 public final class SoulBuyerItemsSettings extends YamlSerializable {
 

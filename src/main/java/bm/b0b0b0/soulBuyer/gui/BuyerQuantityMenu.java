@@ -11,14 +11,6 @@ import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.service.InventorySellHelper;
 import bm.b0b0b0.soulBuyer.service.SaleDelivery;
 import bm.b0b0b0.soulBuyer.service.SellService;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -27,6 +19,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.*;
 
 public final class BuyerQuantityMenu implements InventoryHolder {
 
@@ -153,13 +147,13 @@ public final class BuyerQuantityMenu implements InventoryHolder {
                 selectedAmount,
                 SaleDelivery.CHAT,
                 () ->
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    processing = false;
-                    closingIntentionally = true;
-                    if (player.isOnline()) {
-                        navigation.openBuyer(player, parentSession);
-                    }
-                }),
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            processing = false;
+                            closingIntentionally = true;
+                            if (player.isOnline()) {
+                                navigation.openBuyer(player, parentSession);
+                            }
+                        }),
                 parentSession.payoutMode()
         );
     }
@@ -190,7 +184,7 @@ public final class BuyerQuantityMenu implements InventoryHolder {
             render();
             return;
         }
-        selectedAmount = Math.max(1, Math.min(maxAmount, amount));
+        selectedAmount = Math.clamp(amount, 1, maxAmount);
         render();
     }
 
@@ -245,7 +239,7 @@ public final class BuyerQuantityMenu implements InventoryHolder {
         }
         ItemUnitQuote unitQuote = sellService.unitQuote(player, definition);
         ItemStack preview = itemRenderer.render(player, definition, unitQuote, parentSession.payoutMode());
-        preview.setAmount(Math.max(1, Math.min(64, selectedAmount)));
+        preview.setAmount(Math.clamp(selectedAmount, 1, 64));
         inventory.setItem(quantityGui.previewSlot, preview);
     }
 

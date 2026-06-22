@@ -2,25 +2,15 @@ package bm.b0b0b0.soulBuyer.database;
 
 import bm.b0b0b0.soulBuyer.bootstrap.SoulBuyerStartupLog;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
-import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
 import bm.b0b0b0.soulBuyer.database.migration.StorageTypeMigrationService;
-import bm.b0b0b0.soulBuyer.repository.SqlMarketRepository;
-import bm.b0b0b0.soulBuyer.repository.SqlPlayerAutosellRepository;
-import bm.b0b0b0.soulBuyer.repository.SqlPlayerBoosterRepository;
-import bm.b0b0b0.soulBuyer.repository.SqlPlayerProgressRepository;
-import bm.b0b0b0.soulBuyer.repository.SqlPlayerSellLimitRepository;
-import bm.b0b0b0.soulBuyer.repository.SqlSaleLogRepository;
-import bm.b0b0b0.soulBuyer.repository.YamlMarketRepository;
-import bm.b0b0b0.soulBuyer.repository.YamlPlayerAutosellRepository;
-import bm.b0b0b0.soulBuyer.repository.YamlPlayerBoosterRepository;
-import bm.b0b0b0.soulBuyer.repository.YamlPlayerProgressRepository;
-import bm.b0b0b0.soulBuyer.repository.YamlPlayerSellLimitRepository;
-import bm.b0b0b0.soulBuyer.repository.YamlSaleLogRepository;
+import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
+import bm.b0b0b0.soulBuyer.repository.*;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public final class StorageBootstrap {
 

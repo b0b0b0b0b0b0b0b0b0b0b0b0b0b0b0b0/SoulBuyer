@@ -3,13 +3,14 @@ package bm.b0b0b0.soulBuyer.repository;
 import bm.b0b0b0.soulBuyer.booster.BoosterStateCodec;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.model.PlayerBoosterState;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public final class YamlPlayerBoosterRepository implements PlayerBoosterRepository {
 

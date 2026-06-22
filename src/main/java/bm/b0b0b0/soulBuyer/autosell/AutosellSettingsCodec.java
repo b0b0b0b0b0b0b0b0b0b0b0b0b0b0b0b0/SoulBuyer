@@ -2,11 +2,8 @@ package bm.b0b0b0.soulBuyer.autosell;
 
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
 import bm.b0b0b0.soulBuyer.model.PlayerAutosellSettings;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+
+import java.util.*;
 
 public final class AutosellSettingsCodec {
 
@@ -97,9 +94,7 @@ public final class AutosellSettingsCodec {
         if (payload == null) {
             return lines;
         }
-        for (String line : payload.split("\n")) {
-            lines.add(line);
-        }
+        lines.addAll(Arrays.asList(payload.split("\n")));
         return lines;
     }
 }

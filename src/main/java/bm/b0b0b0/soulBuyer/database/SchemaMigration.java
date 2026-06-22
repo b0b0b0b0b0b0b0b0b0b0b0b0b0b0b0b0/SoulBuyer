@@ -1,9 +1,9 @@
 package bm.b0b0b0.soulBuyer.database;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import javax.sql.DataSource;
 
 public final class SchemaMigration {
 

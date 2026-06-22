@@ -3,9 +3,10 @@ package bm.b0b0b0.soulBuyer.progression;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
+import org.bukkit.entity.Player;
+
 import java.util.Comparator;
 import java.util.Map;
-import org.bukkit.entity.Player;
 
 public final class ProgressionService {
 

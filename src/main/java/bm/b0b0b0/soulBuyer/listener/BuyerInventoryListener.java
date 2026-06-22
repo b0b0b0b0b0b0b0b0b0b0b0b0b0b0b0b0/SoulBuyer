@@ -9,11 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryAction;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -48,21 +44,24 @@ public final class BuyerInventoryListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
-        if (holder instanceof BuyerMenu buyerMenu) {
-            if (buyerMenu.isProcessing()) {
-                return;
+        switch (holder) {
+            case BuyerMenu buyerMenu -> {
+                if (buyerMenu.isProcessing()) {
+                    return;
+                }
+                boolean rightClick = event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT;
+                buyerMenu.handleClick(rawSlot, rightClick);
             }
-            boolean rightClick = event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT;
-            buyerMenu.handleClick(rawSlot, rightClick);
-        } else if (holder instanceof BuyerQuantityMenu quantityMenu) {
-            if (quantityMenu.isProcessing()) {
-                return;
+            case BuyerQuantityMenu quantityMenu -> {
+                if (quantityMenu.isProcessing()) {
+                    return;
+                }
+                quantityMenu.handleClick(rawSlot);
             }
-            quantityMenu.handleClick(rawSlot);
-        } else if (holder instanceof BuyerAutosellMenu autosellMenu) {
-            autosellMenu.handleClick(rawSlot);
-        } else if (holder instanceof BuyerBoostersMenu boostersMenu) {
-            boostersMenu.handleClick(rawSlot);
+            case BuyerAutosellMenu autosellMenu -> autosellMenu.handleClick(rawSlot);
+            case BuyerBoostersMenu boostersMenu -> boostersMenu.handleClick(rawSlot);
+            default -> {
+            }
         }
     }
 

@@ -1,13 +1,14 @@
 package bm.b0b0b0.soulBuyer.config.settings;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import net.elytrium.serializer.annotations.Comment;
 import net.elytrium.serializer.annotations.CommentValue;
 import net.elytrium.serializer.annotations.NewLine;
 import net.elytrium.serializer.annotations.Serializer;
 import net.elytrium.serializer.language.object.YamlSerializable;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class SoulBuyerSettings extends YamlSerializable {
 

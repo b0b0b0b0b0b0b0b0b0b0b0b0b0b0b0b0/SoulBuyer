@@ -2,16 +2,13 @@ package bm.b0b0b0.soulBuyer.database.migration;
 
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
 import bm.b0b0b0.soulBuyer.util.SimpleJsonDoubles;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import javax.sql.DataSource;
-import org.bukkit.configuration.file.YamlConfiguration;
+import java.util.*;
 
 public final class SqlStorageMigrator {
 

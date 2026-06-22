@@ -1,10 +1,11 @@
 package bm.b0b0b0.soulBuyer.config;
 
 import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import net.elytrium.serializer.language.object.YamlSerializable;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public final class SerializedConfigReloader {
 

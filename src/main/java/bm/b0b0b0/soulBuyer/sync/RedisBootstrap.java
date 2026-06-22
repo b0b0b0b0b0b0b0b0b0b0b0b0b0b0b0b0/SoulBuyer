@@ -3,13 +3,14 @@ package bm.b0b0b0.soulBuyer.sync;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
 import bm.b0b0b0.soulBuyer.io.SoulBuyerIoExecutor;
-import java.util.function.Consumer;
-import java.util.logging.Level;
 import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
+
+import java.util.function.Consumer;
+import java.util.logging.Level;
 
 public final class RedisBootstrap {
 

@@ -1,5 +1,9 @@
 package bm.b0b0b0.soulBuyer.message;
 
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -7,9 +11,6 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MessageLoader {
 
@@ -93,7 +94,7 @@ public final class MessageLoader {
     }
 
     private void mergeMissing(Map<String, Object> target, Map<String, Object> defaults) {
-        defaults.forEach((key, value) -> target.putIfAbsent(key, value));
+        defaults.forEach(target::putIfAbsent);
     }
 
     private void flatten(String prefix, ConfigurationSection section, Map<String, Object> target) {
@@ -107,7 +108,6 @@ public final class MessageLoader {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public List<String> lore(String locale, String key) {
         Object value = resolve(locale, key);
         if (value instanceof List<?> list) {

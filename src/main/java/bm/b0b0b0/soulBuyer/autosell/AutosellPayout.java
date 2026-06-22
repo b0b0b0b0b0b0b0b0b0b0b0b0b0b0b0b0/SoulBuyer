@@ -1,6 +1,7 @@
 package bm.b0b0b0.soulBuyer.autosell;
 
 import bm.b0b0b0.soulBuyer.model.BuyerPayoutMode;
+
 import java.util.List;
 
 public final class AutosellPayout {

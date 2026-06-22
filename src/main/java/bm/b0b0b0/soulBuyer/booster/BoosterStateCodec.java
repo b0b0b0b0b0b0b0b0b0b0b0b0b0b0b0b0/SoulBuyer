@@ -3,10 +3,11 @@ package bm.b0b0b0.soulBuyer.booster;
 import bm.b0b0b0.soulBuyer.model.ActiveBooster;
 import bm.b0b0b0.soulBuyer.model.BoosterType;
 import bm.b0b0b0.soulBuyer.model.PlayerBoosterState;
+import org.bukkit.configuration.file.YamlConfiguration;
+
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 public final class BoosterStateCodec {
 

@@ -2,13 +2,14 @@ package bm.b0b0b0.soulBuyer.repository;
 
 import bm.b0b0b0.soulBuyer.booster.BoosterStateCodec;
 import bm.b0b0b0.soulBuyer.model.PlayerBoosterState;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import javax.sql.DataSource;
 
 public final class SqlPlayerBoosterRepository implements PlayerBoosterRepository {
 

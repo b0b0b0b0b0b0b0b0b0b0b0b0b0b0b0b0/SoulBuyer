@@ -5,8 +5,8 @@ import bm.b0b0b0.soulBuyer.integration.EconomyPluginPresence;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.server.ServiceRegisterEvent;
 import org.bukkit.event.server.PluginEnableEvent;
+import org.bukkit.event.server.ServiceRegisterEvent;
 
 public final class EconomyWaitListener implements Listener {
 

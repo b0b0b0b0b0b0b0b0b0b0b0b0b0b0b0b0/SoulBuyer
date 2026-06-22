@@ -1,6 +1,5 @@
 package bm.b0b0b0.soulBuyer.repository;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import javax.sql.DataSource;
 
 public final class SqlMarketRepository implements MarketRepository {
 

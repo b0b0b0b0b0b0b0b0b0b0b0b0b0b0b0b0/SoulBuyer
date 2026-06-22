@@ -1,15 +1,14 @@
 package bm.b0b0b0.soulBuyer.database;
 
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import javax.sql.DataSource;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class StorageDataPresence {
 
@@ -106,7 +105,7 @@ public final class StorageDataPresence {
         return plugin.getDataFolder().toPath().resolve(relative);
     }
 
-    private static int sqlPlayerCount(DataSource dataSource) {
+    private static int sqlPlayerCount(DataSource dataSource) throws Exception {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM soulbuyer_players")) {
@@ -116,7 +115,7 @@ public final class StorageDataPresence {
         }
     }
 
-    private static int sqlMarketCount(DataSource dataSource) {
+    private static int sqlMarketCount(DataSource dataSource) throws Exception {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM soulbuyer_market")) {

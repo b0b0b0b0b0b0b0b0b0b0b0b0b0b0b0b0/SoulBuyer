@@ -1,14 +1,13 @@
 package bm.b0b0b0.soulBuyer.config;
 
 import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ConfigLegacyGuard {
 
@@ -54,7 +53,7 @@ public final class ConfigLegacyGuard {
     private static boolean containsLegacyItemsSection(String yaml) {
         for (String line : yaml.split("\\R")) {
             String trimmed = line.trim();
-            if (trimmed.startsWith("items:")) {
+            if (trimmed.equals("items:") || trimmed.startsWith("items:")) {
                 return true;
             }
         }

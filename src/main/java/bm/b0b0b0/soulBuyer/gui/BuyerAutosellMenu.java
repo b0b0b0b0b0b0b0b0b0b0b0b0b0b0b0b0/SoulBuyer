@@ -1,7 +1,7 @@
 package bm.b0b0b0.soulBuyer.gui;
 
-import bm.b0b0b0.soulBuyer.autosell.AutosellNotify;
 import bm.b0b0b0.soulBuyer.autosell.AutosellPayout;
+import bm.b0b0b0.soulBuyer.autosell.AutosellNotify;
 import bm.b0b0b0.soulBuyer.autosell.AutosellService;
 import bm.b0b0b0.soulBuyer.autosell.AutosellTrigger;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
@@ -9,6 +9,11 @@ import bm.b0b0b0.soulBuyer.config.settings.GuiAutosellSettings;
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.PlayerAutosellSettings;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -16,8 +21,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.*;
 
 public final class BuyerAutosellMenu implements InventoryHolder {
 
@@ -183,13 +186,14 @@ public final class BuyerAutosellMenu implements InventoryHolder {
     }
 
     private String[] settingsPairs(PlayerAutosellSettings settings) {
-        return new String[]{
+        String[] pairs = new String[]{
                 "state", messageService.raw(player, settings.enabled() ? "gui.autosell.state-on" : "gui.autosell.state-off"),
                 "trigger", messageService.raw(player, triggerKey(settings.trigger())),
                 "notify", messageService.raw(player, notifyKey(settings.notifyMode())),
                 "min_price", String.valueOf(settings.minUnitPrice()),
                 "payout", messageService.raw(player, payoutKey(settings.payoutTarget()))
         };
+        return pairs;
     }
 
     private String triggerKey(String trigger) {

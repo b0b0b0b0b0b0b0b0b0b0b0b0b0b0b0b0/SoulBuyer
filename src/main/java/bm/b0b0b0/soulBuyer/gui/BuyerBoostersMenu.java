@@ -8,17 +8,17 @@ import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
 import bm.b0b0b0.soulBuyer.item.ItemNameResolver;
 import bm.b0b0b0.soulBuyer.message.MessageService;
+import bm.b0b0b0.soulBuyer.model.BoosterCurrency;
 import bm.b0b0b0.soulBuyer.model.BoosterType;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public final class BuyerBoostersMenu implements InventoryHolder {
 
@@ -156,8 +156,8 @@ public final class BuyerBoostersMenu implements InventoryHolder {
                     "effect", formatEffect(offer),
                     "remaining", BoosterDurationFormatter.formatMillis(remaining),
                     "active_state", messageService.raw(player, remaining > 0L
-                    ? "gui.boosters.active-yes"
-                    : "gui.boosters.active-no")
+                            ? "gui.boosters.active-yes"
+                            : "gui.boosters.active-no")
             };
             GuiGeneralSettings.GuiElementSettings view = copyOfferElement(element, offer);
             if (remaining > 0L) {

@@ -5,6 +5,9 @@ import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.BuyerPayoutMode;
 import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -14,10 +17,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
 public final class BuyerMenuItemRenderer {
 
@@ -48,7 +47,7 @@ public final class BuyerMenuItemRenderer {
             BuyerPayoutMode payoutMode
     ) {
         Material material = parseMaterial(definition.material());
-        ItemStack itemStack = ItemStack.of(material, Math.clamp(quote.inventoryAmount(), 1, 64));
+        ItemStack itemStack = ItemStack.of(material, Math.max(1, Math.min(64, quote.inventoryAmount())));
         ItemMeta meta = itemStack.getItemMeta();
         Component itemName = itemNameResolver.displayComponent(player, itemStack);
         meta.displayName(messageService.guiItemName(player, "gui.buyer.item-name", itemName));

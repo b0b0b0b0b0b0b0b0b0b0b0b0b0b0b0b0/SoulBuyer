@@ -11,15 +11,14 @@ import bm.b0b0b0.soulBuyer.model.BoosterType;
 import bm.b0b0b0.soulBuyer.model.PlayerBoosterState;
 import bm.b0b0b0.soulBuyer.repository.PlayerBoosterRepository;
 import bm.b0b0b0.soulBuyer.repository.PlayerProgressRepository;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BoosterService {
 
@@ -126,8 +125,7 @@ public final class BoosterService {
         CompletableFuture<Boolean> payment = switch (currency) {
             case PROGRESSION_POINTS -> progressRepository.trySpendPoints(playerId, offer.price);
             case VAULT -> CompletableFuture.completedFuture(vaultEconomyHook.withdraw(player, offer.price));
-            case PLAYER_POINTS ->
-                    CompletableFuture.completedFuture(playerPointsEconomyHook.withdraw(player, offer.price));
+            case PLAYER_POINTS -> CompletableFuture.completedFuture(playerPointsEconomyHook.withdraw(player, offer.price));
         };
         payment.thenCompose(paid -> {
             if (!paid) {
@@ -153,7 +151,9 @@ public final class BoosterService {
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (player.isOnline()) {
                 if (success && offer != null) {
-                    messageService.send(player, "boosters.purchased", "offer", messageService.guiRaw(player, offer.nameKey));
+                    messageService.send(player, "boosters.purchased", new String[]{
+                            "offer", messageService.guiRaw(player, offer.nameKey)
+                    });
                     if (currency() == BoosterCurrency.PROGRESSION_POINTS && progressCacheRefresher != null) {
                         progressCacheRefresher.accept(player.getUniqueId());
                     }

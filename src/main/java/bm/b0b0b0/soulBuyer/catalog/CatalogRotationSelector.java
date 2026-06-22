@@ -2,8 +2,13 @@ package bm.b0b0b0.soulBuyer.catalog;
 
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class CatalogRotationSelector {
@@ -20,7 +25,7 @@ public final class CatalogRotationSelector {
         if (pool.isEmpty()) {
             return Set.of();
         }
-        int safeTarget = Math.clamp(targetCount, 1, pool.size());
+        int safeTarget = Math.max(1, Math.min(targetCount, pool.size()));
         Map<String, List<SellableItemDefinition>> byCategory = new LinkedHashMap<>();
         for (SellableItemDefinition definition : pool) {
             byCategory.computeIfAbsent(definition.categoryId(), ignored -> new ArrayList<>()).add(definition);
@@ -32,7 +37,7 @@ public final class CatalogRotationSelector {
         LinkedHashSet<String> selected = new LinkedHashSet<>();
         if (minPerCategory > 0) {
             List<String> categoryOrder = categories.entrySet().stream()
-                    .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(left -> left.order)))
+                    .sorted(Map.Entry.comparingByValue((left, right) -> Integer.compare(left.order, right.order)))
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toCollection(ArrayList::new));
             for (String categoryId : categoryOrder) {

@@ -1,9 +1,8 @@
 package bm.b0b0b0.soulBuyer.integration;
 
 import bm.b0b0b0.soulBuyer.service.BuyerStatsService;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.util.logging.Level;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PlaceholderApiBridge {
 
@@ -53,6 +52,8 @@ public final class PlaceholderApiBridge {
         }
         try {
             return me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, input);
+        } catch (NoClassDefFoundError exception) {
+            return input;
         } catch (Throwable throwable) {
             return input;
         }

@@ -1,8 +1,7 @@
 package bm.b0b0b0.soulBuyer.debug;
 
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.util.logging.Level;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class SoulBuyerDebugLog {
 

@@ -7,6 +7,8 @@ import bm.b0b0b0.soulBuyer.autosell.AutosellTrigger;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.config.settings.GuiAutosellSettings;
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
+import bm.b0b0b0.soulBuyer.item.ItemRegistry;
+import bm.b0b0b0.soulBuyer.message.MessagePairUtils;
 import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.PlayerAutosellSettings;
 import java.util.HashMap;
@@ -19,19 +21,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class BuyerAutosellMenu implements InventoryHolder {
+public final class BuyerAutosellMenu implements SoulBuyerGuiHolder {
 
     private final JavaPlugin plugin;
     private final Player player;
     private final PluginConfig config;
     private final MessageService messageService;
     private final GuiItemFactory itemFactory;
+    private final ItemRegistry itemRegistry;
     private final AutosellService autosellService;
     private final BuyerMenuNavigation navigation;
     private final BuyerMenuSession parentSession;
+    private final BuyerCategoryIconAnimator categoryIconAnimator;
     private final Inventory inventory;
     private final GuiAutosellSettings autosellGui;
     private final Map<Integer, String> actions;
@@ -45,6 +48,7 @@ public final class BuyerAutosellMenu implements InventoryHolder {
             PluginConfig config,
             MessageService messageService,
             GuiItemFactory itemFactory,
+            ItemRegistry itemRegistry,
             AutosellService autosellService,
             BuyerMenuNavigation navigation,
             BuyerMenuSession parentSession
@@ -54,6 +58,7 @@ public final class BuyerAutosellMenu implements InventoryHolder {
         this.config = config;
         this.messageService = messageService;
         this.itemFactory = itemFactory;
+        this.itemRegistry = itemRegistry;
         this.autosellService = autosellService;
         this.navigation = navigation;
         this.parentSession = parentSession == null ? BuyerMenuSession.empty() : parentSession;
@@ -63,6 +68,22 @@ public final class BuyerAutosellMenu implements InventoryHolder {
         indexReservedSlots();
         Component title = messageService.guiText(player, autosellGui.titleKey);
         this.inventory = Bukkit.createInventory(this, autosellGui.size, title);
+        this.categoryIconAnimator = new BuyerCategoryIconAnimator(
+                plugin,
+                player,
+                config,
+                itemRegistry,
+                itemFactory,
+                inventory,
+                autosellGui.elements,
+                "AUTO_CATEGORY"
+        );
+        this.categoryIconAnimator.bind(
+                this::isCategoryEnabled,
+                this::categoryItemPairs,
+                () -> false,
+                () -> player.getOpenInventory().getTopInventory().getHolder(false) instanceof BuyerAutosellMenu
+        );
         render();
     }
 
@@ -71,7 +92,7 @@ public final class BuyerAutosellMenu implements InventoryHolder {
         return inventory;
     }
 
-    public void handleClick(int rawSlot) {
+    public void handleClick(int rawSlot, boolean rightClick) {
         if (!autosellService.canAccess(player)) {
             return;
         }
@@ -82,11 +103,19 @@ public final class BuyerAutosellMenu implements InventoryHolder {
             case "AUTO_NOTIFY" -> autosellService.cycleNotify(player, this::render);
             case "AUTO_MIN_PRICE" -> autosellService.cycleMinUnitPrice(player, this::render);
             case "AUTO_PAYOUT" -> autosellService.cyclePayout(player, this::render);
-            case "AUTO_CATEGORY" -> autosellService.toggleCategory(
-                    player,
-                    categoryBySlot.getOrDefault(rawSlot, ""),
-                    this::render
-            );
+            case "AUTO_CATEGORY" -> {
+                String categoryId = categoryBySlot.getOrDefault(rawSlot, "");
+                if (categoryId.isBlank()) {
+                    return;
+                }
+                if (rightClick) {
+                    categoryIconAnimator.stop();
+                    closingIntentionally = true;
+                    navigation.openAutosellCategory(player, categoryId, parentSession);
+                    return;
+                }
+                autosellService.toggleCategory(player, categoryId, this::render);
+            }
             case "AUTO_BACK" -> goBack();
             default -> {
             }
@@ -94,42 +123,32 @@ public final class BuyerAutosellMenu implements InventoryHolder {
     }
 
     public void onClose() {
-        if (closingIntentionally || !player.isOnline()) {
-            return;
-        }
-        Bukkit.getScheduler().runTask(plugin, () -> navigation.openBuyer(player, parentSession));
+        categoryIconAnimator.stop();
+        BuyerSubMenuNavigation.onUnexpectedClose(plugin, navigation, player, parentSession, closingIntentionally);
     }
 
     private void goBack() {
-        closingIntentionally = true;
-        navigation.openBuyer(player, parentSession);
+        BuyerSubMenuNavigation.goBack(navigation, player, parentSession, () -> closingIntentionally = true);
     }
 
     private void render() {
         inventory.clear();
         fillFrame();
         fillControls();
+        categoryIconAnimator.onMenuRendered();
     }
 
     private void fillFrame() {
-        GuiGeneralSettings.GuiElementSettings border = autosellGui.elements.get("border");
-        GuiGeneralSettings.GuiElementSettings separator = autosellGui.elements.get("separator");
-        if (border == null) {
-            return;
-        }
-        for (int slot : GuiLayoutHelper.frameSlots(autosellGui.size)) {
-            if (reservedSlots.contains(slot)) {
-                continue;
-            }
-            inventory.setItem(slot, itemFactory.filler(player, border));
-        }
-        if (separator != null) {
-            for (int slot : List.of(10, 11, 12, 13, 14, 15, 16)) {
-                if (!reservedSlots.contains(slot)) {
-                    inventory.setItem(slot, itemFactory.filler(player, separator));
-                }
-            }
-        }
+        GuiLayoutHelper.fillBorderAndSeparators(
+                inventory,
+                player,
+                itemFactory,
+                autosellGui.size,
+                autosellGui.elements.get("border"),
+                autosellGui.elements.get("separator"),
+                reservedSlots::contains,
+                new int[]{10, 11, 12, 13, 14, 15, 16}
+        );
     }
 
     private void fillControls() {
@@ -164,15 +183,11 @@ public final class BuyerAutosellMenu implements InventoryHolder {
                 if (categoryId.isBlank()) {
                     continue;
                 }
-                boolean selected = settings.categories().contains(categoryId);
-                String[] categoryPairs = mergePairs(
-                        pairs,
-                        "category_state",
-                        messageService.raw(
-                                player,
-                                selected ? "gui.autosell.category-on" : "gui.autosell.category-off"
-                        )
-                );
+                if (config.categoryIconAnimation().enabled) {
+                    continue;
+                }
+                boolean selected = isCategoryEnabled(categoryId);
+                String[] categoryPairs = categoryItemPairs(categoryId);
                 inventory.setItem(
                         element.slot,
                         selected
@@ -183,6 +198,23 @@ public final class BuyerAutosellMenu implements InventoryHolder {
             }
             inventory.setItem(element.slot, itemFactory.build(player, element, pairs));
         }
+    }
+
+    private boolean isCategoryEnabled(String categoryId) {
+        return autosellService.settings(player).categories().contains(categoryId);
+    }
+
+    private String[] categoryItemPairs(String categoryId) {
+        PlayerAutosellSettings settings = autosellService.settings(player);
+        boolean selected = settings.categories().contains(categoryId);
+        return MessagePairUtils.append(
+                settingsPairs(settings),
+                "category_state",
+                messageService.raw(
+                        player,
+                        selected ? "gui.autosell.category-on" : "gui.autosell.category-off"
+                )
+        );
     }
 
     private String[] settingsPairs(PlayerAutosellSettings settings) {
@@ -236,14 +268,6 @@ public final class BuyerAutosellMenu implements InventoryHolder {
             case AutosellNotify.OFF -> "gui.autosell.notify-off";
             default -> "gui.autosell.notify-actionbar";
         };
-    }
-
-    private String[] mergePairs(String[] base, String key, String value) {
-        String[] merged = new String[base.length + 2];
-        System.arraycopy(base, 0, merged, 0, base.length);
-        merged[base.length] = key;
-        merged[base.length + 1] = value;
-        return merged;
     }
 
     private void indexCategories() {

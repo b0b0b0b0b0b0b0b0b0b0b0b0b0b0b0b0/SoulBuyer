@@ -21,14 +21,10 @@ public final class AutosellSettingsCodec {
         builder.append("min-unit-price=").append(settings.minUnitPrice()).append('\n');
         builder.append("payout=").append(settings.payoutTarget()).append('\n');
         builder.append("categories=");
-        boolean first = true;
-        for (String category : settings.categories()) {
-            if (!first) {
-                builder.append(',');
-            }
-            builder.append(category);
-            first = false;
-        }
+        appendCsv(builder, settings.categories());
+        builder.append('\n');
+        builder.append("disabled-items=");
+        appendCsv(builder, settings.disabledItems());
         return builder.toString();
     }
 
@@ -46,6 +42,7 @@ public final class AutosellSettingsCodec {
         double minUnitPrice = defaults.defaultMinUnitPrice;
         String payout = AutosellPayout.normalize(defaults.defaultPayout);
         Set<String> categories = new LinkedHashSet<>(defaults.defaultCategories);
+        Set<String> disabledItems = new LinkedHashSet<>();
         for (String line : payload.split("\n")) {
             int separator = line.indexOf('=');
             if (separator <= 0) {
@@ -60,11 +57,35 @@ public final class AutosellSettingsCodec {
                 case "min-unit-price" -> minUnitPrice = parseDouble(value, defaults.defaultMinUnitPrice);
                 case "payout" -> payout = AutosellPayout.normalize(value);
                 case "categories" -> categories = parseCategories(value, defaults.defaultCategories);
+                case "disabled-items" -> disabledItems = parseCsv(value);
                 default -> {
                 }
             }
         }
-        return new PlayerAutosellSettings(playerId, enabled, trigger, categories, notify, minUnitPrice, payout);
+        return new PlayerAutosellSettings(
+                playerId,
+                enabled,
+                trigger,
+                categories,
+                disabledItems,
+                notify,
+                minUnitPrice,
+                payout
+        );
+    }
+
+    private static void appendCsv(StringBuilder builder, Iterable<String> values) {
+        boolean first = true;
+        for (String value : values) {
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            if (!first) {
+                builder.append(',');
+            }
+            builder.append(value);
+            first = false;
+        }
     }
 
     private static double parseDouble(String value, double fallback) {
@@ -79,17 +100,25 @@ public final class AutosellSettingsCodec {
         if (value.isBlank()) {
             return new LinkedHashSet<>(fallback);
         }
-        Set<String> categories = new LinkedHashSet<>();
-        for (String part : value.split(",")) {
-            String trimmed = part.trim();
-            if (!trimmed.isEmpty()) {
-                categories.add(trimmed);
-            }
-        }
+        Set<String> categories = parseCsv(value);
         if (categories.isEmpty()) {
             return new LinkedHashSet<>(fallback);
         }
         return categories;
+    }
+
+    private static Set<String> parseCsv(String value) {
+        Set<String> values = new LinkedHashSet<>();
+        if (value == null || value.isBlank()) {
+            return values;
+        }
+        for (String part : value.split(",")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                values.add(trimmed);
+            }
+        }
+        return values;
     }
 
     public static List<String> splitLines(String payload) {

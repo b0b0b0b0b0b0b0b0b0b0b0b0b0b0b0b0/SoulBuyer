@@ -52,6 +52,10 @@ public final class SoulBuyerDebugLog {
         plugin.getLogger().warning(message);
     }
 
+    public void tooltipDebug(String message) {
+        plugin.getLogger().info("[SoulBuyer|TOOLTIP-DEBUG] " + message + threadSuffix());
+    }
+
     public void error(String message, Throwable throwable) {
         plugin.getLogger().log(Level.SEVERE, message, throwable);
     }

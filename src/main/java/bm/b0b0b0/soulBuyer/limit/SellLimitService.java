@@ -8,12 +8,14 @@ import bm.b0b0b0.soulBuyer.model.PlayerSellLimitUsage;
 import bm.b0b0b0.soulBuyer.model.SellLimitSplit;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.repository.PlayerSellLimitRepository;
+import bm.b0b0b0.soulBuyer.service.InventorySellHelper;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -78,7 +80,7 @@ public final class SellLimitService {
             return true;
         }
         for (ItemStack stack : player.getInventory().getStorageContents()) {
-            if (stack == null || stack.getType().isAir()) {
+            if (ItemStacks.isAbsent(stack)) {
                 continue;
             }
             Optional<SellableItemDefinition> definitionOptional = itemRegistry.findInPool(stack);
@@ -100,29 +102,19 @@ public final class SellLimitService {
         if (!enabled()) {
             return new SellLimitSplit(stacks, List.of());
         }
-        Map<String, Integer> grouped = new HashMap<>();
-        Map<String, List<ItemStack>> stacksByItem = new HashMap<>();
-        for (ItemStack stack : stacks) {
-            if (stack == null || stack.getType().isAir()) {
-                continue;
-            }
-            Optional<SellableItemDefinition> definitionOptional = itemRegistry.find(stack);
-            if (definitionOptional.isEmpty()) {
-                continue;
-            }
-            String itemId = definitionOptional.get().id();
-            grouped.merge(itemId, stack.getAmount(), Integer::sum);
-            stacksByItem.computeIfAbsent(itemId, ignored -> new ArrayList<>()).add(stack.clone());
-        }
-
+        InventorySellHelper.GroupedStacks grouped = InventorySellHelper.groupStacks(
+                itemRegistry,
+                stacks,
+                InventorySellHelper.CatalogScope.ACTIVE
+        );
         List<ItemStack> sell = new ArrayList<>();
         List<ItemStack> returned = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : grouped.entrySet()) {
+        for (Map.Entry<String, Integer> entry : grouped.amounts().entrySet()) {
             int allowed = remaining(player, usage, entry.getKey());
             int total = entry.getValue();
             int toSell = Math.min(total, allowed);
             int toReturn = total - toSell;
-            partitionStacks(stacksByItem.get(entry.getKey()), toSell, toReturn, sell, returned);
+            partitionStacks(grouped.stacksByItemId().get(entry.getKey()), toSell, toReturn, sell, returned);
         }
         return new SellLimitSplit(sell, returned);
     }

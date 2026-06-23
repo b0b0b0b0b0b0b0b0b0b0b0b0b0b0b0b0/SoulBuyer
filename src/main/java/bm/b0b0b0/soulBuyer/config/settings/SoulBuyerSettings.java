@@ -443,6 +443,9 @@ public final class SoulBuyerSettings extends YamlSerializable {
 
         @Serializer(SoulBuyerSerializerConfig.NullableCmdSerializer.class)
         public Integer customModelData = -1;
+
+        @Comment(@CommentValue("Material иконки в GUI (пусто = авто: PAPER+model или превью trim на нагруднике для шаблонов кузнеца)"))
+        public String displayMaterial = "";
     }
 
     private static Map<String, CategorySettings> defaultCategories() {

@@ -2,9 +2,9 @@ package bm.b0b0b0.soulBuyer.gui;
 
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.message.MessageService;
+import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -21,13 +21,13 @@ public final class GuiItemFactory {
     }
 
     public ItemStack build(Player player, GuiGeneralSettings.GuiElementSettings element, String... pairs) {
-        ItemStack itemStack = buildMaterial(player, element, parseMaterial(element.material), pairs);
+        ItemStack itemStack = buildMaterial(player, element, MaterialParser.parse(element.material), pairs);
         applyInactiveSelection(itemStack);
         return itemStack;
     }
 
     public ItemStack buildSelected(Player player, GuiGeneralSettings.GuiElementSettings element, String... pairs) {
-        ItemStack itemStack = buildMaterial(player, element, parseMaterial(element.material), pairs);
+        ItemStack itemStack = buildMaterial(player, element, MaterialParser.parse(element.material), pairs);
         applyActiveSelection(itemStack);
         return itemStack;
     }
@@ -63,6 +63,55 @@ public final class GuiItemFactory {
         if (!element.nameKey.isEmpty()) {
             meta.displayName(messageService.guiText(player, element.nameKey, pairs));
         }
+        applyLoreAndFlags(player, element, meta, pairs);
+        itemStack.setItemMeta(meta);
+        return itemStack;
+    }
+
+    public ItemStack buildMaterialWithDisplayName(
+            Player player,
+            GuiGeneralSettings.GuiElementSettings element,
+            Material material,
+            Component displayName,
+            String... lorePairs
+    ) {
+        ItemStack itemStack = ItemStack.of(material);
+        ItemMeta meta = itemStack.getItemMeta();
+        meta.displayName(displayName);
+        applyLoreAndFlags(player, element, meta, lorePairs);
+        itemStack.setItemMeta(meta);
+        return itemStack;
+    }
+
+    public ItemStack buildSelectedMaterialWithDisplayName(
+            Player player,
+            GuiGeneralSettings.GuiElementSettings element,
+            Material material,
+            Component displayName,
+            String... lorePairs
+    ) {
+        ItemStack itemStack = buildMaterialWithDisplayName(player, element, material, displayName, lorePairs);
+        applyActiveSelection(itemStack);
+        return itemStack;
+    }
+
+    public ItemStack navigationFiller(
+            Player player,
+            GuiGeneralSettings.GuiElementSettings separator,
+            GuiGeneralSettings.GuiElementSettings border
+    ) {
+        if (separator != null) {
+            return filler(player, separator);
+        }
+        return filler(player, border);
+    }
+
+    private void applyLoreAndFlags(
+            Player player,
+            GuiGeneralSettings.GuiElementSettings element,
+            ItemMeta meta,
+            String... pairs
+    ) {
         if (!element.loreKeys.isEmpty()) {
             List<Component> lore = new ArrayList<>();
             for (String loreKey : element.loreKeys) {
@@ -71,8 +120,6 @@ public final class GuiItemFactory {
             meta.lore(lore);
         }
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
-        itemStack.setItemMeta(meta);
-        return itemStack;
     }
 
     public ItemStack filler(Player player, GuiGeneralSettings.GuiElementSettings element) {
@@ -89,13 +136,5 @@ public final class GuiItemFactory {
         ItemMeta meta = itemStack.getItemMeta();
         meta.setEnchantmentGlintOverride(false);
         itemStack.setItemMeta(meta);
-    }
-
-    private Material parseMaterial(String name) {
-        try {
-            return Material.valueOf(name.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            return Material.STONE;
-        }
     }
 }

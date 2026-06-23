@@ -124,6 +124,19 @@ public final class MessageLoader {
         return value == null ? key : String.valueOf(value);
     }
 
+    public boolean hasKey(String locale, String key) {
+        return containsKey(locale, key);
+    }
+
+    public boolean containsKey(String locale, String key) {
+        Map<String, Object> primary = locales.get(locale);
+        if (primary != null && primary.containsKey(key)) {
+            return true;
+        }
+        Map<String, Object> fallback = locales.get(fallbackLocale);
+        return fallback != null && fallback.containsKey(key);
+    }
+
     private Object resolve(String locale, String key) {
         Map<String, Object> primary = locales.get(locale);
         if (primary != null && primary.containsKey(key)) {

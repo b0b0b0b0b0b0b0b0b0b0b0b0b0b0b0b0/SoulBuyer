@@ -133,7 +133,7 @@ public final class CatalogRotationService {
     private Set<String> resolveActiveIds(CatalogRotationState state) {
         LinkedHashSet<String> saved = new LinkedHashSet<>();
         for (String itemId : state.activeItemIds()) {
-            if (itemRegistry.pool().stream().anyMatch(definition -> definition.id().equals(itemId))) {
+            if (itemRegistry.existsInPool(itemId)) {
                 saved.add(itemId);
             }
         }

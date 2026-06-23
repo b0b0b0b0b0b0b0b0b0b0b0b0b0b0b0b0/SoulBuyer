@@ -41,11 +41,13 @@ gui:
     item-name: "&#E9D5FF{name}"
     item-lore:
       - "&#9CA3AFКатегория: {category}"
+      - "<empty>"
       - "&#9CA3AFЦена: &#E9D5FF{price} &#9CA3AF/ шт."
       - "&#9CA3AFОчки: &#E9D5FF{points} &#9CA3AF/ шт."
       - "&#9CA3AFРынок: &#E9D5FF×{market}"
     item-lore-playerpoints:
       - "&#9CA3AFКатегория: {category}"
+      - "<empty>"
       - "&#9CA3AFВыплата: &#FCD34D{price} &#9CA3AFпоинтов / шт."
       - "&#9CA3AFОчки: &#E9D5FF{points} &#9CA3AF/ шт."
       - "&#9CA3AFРынок: &#E9D5FF×{market}"
@@ -145,8 +147,16 @@ gui:
       - "&#9CA3AFНажмите для изменения"
     category-lore:
       - "&#9CA3AFАвтопродажа ресурсов категории"
-      - "&#D8B4FE▶ Клик — включить или выключить"
+      - "&#D8B4FE▶ ЛКМ — вкл/выкл категорию"
+      - "&#D8B4FE▶ ПКМ — выбор предметов"
       - "&#9CA3AFСейчас: {category_state}"
+    category-items-title: "&#4C1D95◆ &#E9D5FF{category} &#4C1D95◆"
+    category-item-lore:
+      - "&#9CA3AFАвтопродажа: {item_state}"
+      - "&#D8B4FE▶ Клик — вкл/выкл"
+      - "&#6B7280Только предметы из текущей ротации"
+    item-on: "&#86EFACвключена"
+    item-off: "&#FF5555выключена"
     category-on: "&#86EFACвключена"
     category-off: "&#FF5555выключена"
     state-on: "&#86EFACвключена"
@@ -177,6 +187,7 @@ gui:
       - "&#9CA3AF(обычный или донатный скупщик)."
       - " "
       - "&#9CA3AFКатегории — что продавать."
+      - "&#9CA3AFПКМ по категории — выбор предметов."
       - "&#9CA3AFКолокол и самородок —"
       - "&#9CA3AFуведомления и мин. цена."
   boosters:

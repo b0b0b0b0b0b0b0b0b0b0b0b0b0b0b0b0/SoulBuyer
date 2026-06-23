@@ -3,6 +3,7 @@ package bm.b0b0b0.soulBuyer.model;
 public record SellableItemDefinition(
         String id,
         String material,
+        String displayMaterial,
         String categoryId,
         double basePrice,
         double basePoints,
@@ -10,5 +11,9 @@ public record SellableItemDefinition(
 ) {
     public boolean usesCustomModelData() {
         return customModelData >= 0;
+    }
+
+    public String iconMaterial() {
+        return displayMaterial == null || displayMaterial.isBlank() ? material : displayMaterial;
     }
 }

@@ -23,6 +23,7 @@ import bm.b0b0b0.soulBuyer.integration.EconomyPayoutRouter;
 import bm.b0b0b0.soulBuyer.integration.PlayerPointsEconomyHook;
 import bm.b0b0b0.soulBuyer.integration.VaultEconomyHook;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -48,6 +49,7 @@ public final class SoulBuyerRuntime implements SellService.PluginContext {
     private SellLimitService sellLimitService;
     private CatalogRotationService catalogRotationService;
     private final Map<UUID, PlayerProgress> progressCache = new ConcurrentHashMap<>();
+    private final Set<UUID> progressHydrated = ConcurrentHashMap.newKeySet();
     private final Map<UUID, PlayerSellLimitUsage> sellLimitCache = new ConcurrentHashMap<>();
     private volatile boolean ready;
 
@@ -177,6 +179,11 @@ public final class SoulBuyerRuntime implements SellService.PluginContext {
     }
 
     @Override
+    public boolean isProgressHydrated(UUID playerId) {
+        return progressHydrated.contains(playerId);
+    }
+
+    @Override
     public SellLimitService sellLimitService() {
         return sellLimitService;
     }
@@ -187,8 +194,14 @@ public final class SoulBuyerRuntime implements SellService.PluginContext {
     }
 
     @Override
+    public BoosterService boosterService() {
+        return boosterService;
+    }
+
+    @Override
     public void cacheProgress(PlayerProgress progress) {
         progressCache.put(progress.playerId(), progress);
+        progressHydrated.add(progress.playerId());
     }
 
     @Override

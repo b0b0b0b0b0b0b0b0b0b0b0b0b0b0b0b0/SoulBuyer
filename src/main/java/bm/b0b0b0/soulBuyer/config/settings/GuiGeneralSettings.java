@@ -19,6 +19,10 @@ public final class GuiGeneralSettings extends YamlSerializable {
     public String backNameKey = "gui.nav.back";
 
     @NewLine
+    @Comment(@CommentValue("true — убрать ванильный курсив у названий и lore предметов в GUI"))
+    public boolean disableItemItalic = true;
+
+    @NewLine
     @Comment(@CommentValue("Общие декоративные элементы (filler) для всех GUI SoulBuyer"))
     public Map<String, GuiElementSettings> navigation = defaultNavigation();
 

@@ -17,6 +17,21 @@ public final class GuiBuyerSettings extends YamlSerializable {
     @Comment(@CommentValue("Ключ заголовка окна в lang/*.yml"))
     public String titleKey = "gui.buyer.title";
 
+    @NewLine
+    @Comment({
+            @CommentValue("Ключи lang для иконок скупаемых предметов в сетке GUI."),
+            @CommentValue("Плейсхолдеры: {name} {id} {material} {category} {price} {points} {market} {multiplier} {amount}"),
+            @CommentValue("Пустая строка в lore: \" \" или <empty> / <blank>")
+    })
+    public String itemNameKey = "gui.buyer.item-name";
+    public String itemLoreKey = "gui.buyer.item-lore";
+    public String itemLorePlayerPointsKey = "gui.buyer.item-lore-playerpoints";
+    public String itemSellHintKey = "gui.buyer.item-sell-hint";
+    public String itemEmptyHintKey = "gui.buyer.item-empty-hint";
+
+    @Comment(@CommentValue("true — скрыть ванильный lore предмета (шаблоны, «применяется к», муз. диски и т.д.)"))
+    public boolean hideVanillaItemTooltip = true;
+
     @Comment(@CommentValue("Размер GUI (54 = 6 рядов). Не меняй без правки слотов ниже."))
     public int size = 54;
 

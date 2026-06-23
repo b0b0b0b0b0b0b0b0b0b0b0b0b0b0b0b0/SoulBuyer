@@ -3,6 +3,9 @@ package bm.b0b0b0.soulBuyer.gui;
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.IntPredicate;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 
 public final class GuiLayoutHelper {
 
@@ -26,5 +29,33 @@ public final class GuiLayoutHelper {
             slots[index] = index;
         }
         return slots;
+    }
+
+    public static void fillBorderAndSeparators(
+            Inventory inventory,
+            Player player,
+            GuiItemFactory factory,
+            int size,
+            GuiGeneralSettings.GuiElementSettings border,
+            GuiGeneralSettings.GuiElementSettings separator,
+            IntPredicate skipSlot,
+            int[] separatorSlots
+    ) {
+        if (border == null) {
+            return;
+        }
+        for (int slot : frameSlots(size)) {
+            if (!skipSlot.test(slot)) {
+                inventory.setItem(slot, factory.filler(player, border));
+            }
+        }
+        if (separator == null || separatorSlots == null) {
+            return;
+        }
+        for (int slot : separatorSlots) {
+            if (!skipSlot.test(slot)) {
+                inventory.setItem(slot, factory.filler(player, separator));
+            }
+        }
     }
 }

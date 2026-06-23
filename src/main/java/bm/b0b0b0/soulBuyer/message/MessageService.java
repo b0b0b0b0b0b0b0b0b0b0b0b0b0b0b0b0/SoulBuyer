@@ -18,6 +18,7 @@ public final class MessageService {
     private final MessageLoader loader;
     private final Map<UUID, String> playerLocales = new HashMap<>();
     private PlaceholderApiBridge placeholderApiBridge;
+    private boolean disableGuiItemItalic = true;
 
     public MessageService(MessageLoader loader) {
         this.loader = loader;
@@ -25,6 +26,10 @@ public final class MessageService {
 
     public void bindPlaceholderApi(PlaceholderApiBridge placeholderApiBridge) {
         this.placeholderApiBridge = placeholderApiBridge;
+    }
+
+    public void setDisableGuiItemItalic(boolean disableGuiItemItalic) {
+        this.disableGuiItemItalic = disableGuiItemItalic;
     }
 
     public String locale(Player player) {
@@ -42,7 +47,7 @@ public final class MessageService {
     }
 
     public Component guiText(Player player, String key, String... pairs) {
-        return HexColorParser.parse(expand(player, loader.raw(locale(player), key), pairs));
+        return withoutItemItalic(HexColorParser.parse(expand(player, loader.raw(locale(player), key), pairs)));
     }
 
     public Component guiTextWithComponent(Player player, String key, String placeholder, Component value) {
@@ -58,7 +63,9 @@ public final class MessageService {
         Component styledValue = value
                 .style(value.style().merge(itemStyle, Style.Merge.Strategy.IF_ABSENT_ON_TARGET))
                 .decoration(TextDecoration.ITALIC, false);
-        return HexColorParser.parse(prefix).append(styledValue).append(HexColorParser.parse(suffix));
+        return withoutItemItalic(HexColorParser.parse(prefix))
+                .append(styledValue)
+                .append(withoutItemItalic(HexColorParser.parse(suffix)));
     }
 
     public Component guiItemName(Player player, String key, Component itemName) {
@@ -71,8 +78,34 @@ public final class MessageService {
 
     public List<Component> guiLore(Player player, String key, String... pairs) {
         return loader.lore(locale(player), key).stream()
-                .map(line -> HexColorParser.parse(expand(player, line, pairs)))
+                .map(line -> formatGuiLoreLine(player, line, pairs))
                 .toList();
+    }
+
+    public boolean hasKey(Player player, String key) {
+        return hasKey(locale(player), key);
+    }
+
+    public boolean hasKey(String locale, String key) {
+        return loader.containsKey(locale, key);
+    }
+
+    private Component formatGuiLoreLine(Player player, String line, String... pairs) {
+        if (line == null) {
+            return withoutItemItalic(Component.text(" "));
+        }
+        String trimmed = line.trim();
+        if (trimmed.isEmpty() || "<empty>".equalsIgnoreCase(trimmed) || "<blank>".equalsIgnoreCase(trimmed)) {
+            return withoutItemItalic(Component.text(" "));
+        }
+        return withoutItemItalic(HexColorParser.parse(expand(player, line, pairs)));
+    }
+
+    private Component withoutItemItalic(Component component) {
+        if (!disableGuiItemItalic || component == null) {
+            return component;
+        }
+        return component.decoration(TextDecoration.ITALIC, false);
     }
 
     public String guiRaw(Player player, String key, String... pairs) {

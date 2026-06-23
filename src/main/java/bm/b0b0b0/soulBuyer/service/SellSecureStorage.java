@@ -1,5 +1,6 @@
 package bm.b0b0b0.soulBuyer.service;
 
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +90,7 @@ public final class SellSecureStorage {
     private List<ItemStack> cloneAll(List<ItemStack> items) {
         List<ItemStack> clones = new ArrayList<>();
         for (ItemStack itemStack : items) {
-            if (itemStack != null && !itemStack.getType().isAir()) {
+            if (ItemStacks.isPresent(itemStack)) {
                 clones.add(itemStack.clone());
             }
         }

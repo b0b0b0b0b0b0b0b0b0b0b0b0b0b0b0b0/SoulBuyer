@@ -33,7 +33,7 @@
 - **Оптимизация** — весь I/O БД асинхронно; main thread не блокируется; HikariCP; Redis только когда нужна сеть
 - **Хранение на выбор** — `flat` / `sqlite` / `mysql` + Redis для нескольких Paper-серверов с общим рынком
 - **Безопасные продажи** — secure storage на транзакцию; при ошибке или выходе предметы возвращаются
-- **API для других плагинов** — `SoulBuyerApi`: открыть меню, котировки, рынок, прогресс, автопродажа
+- **API для других плагинов** — `SoulBuyerApi`: меню, котировки, продажа из своего GUI, категории предметов, прогресс
 
 ---
 
@@ -71,17 +71,52 @@
 | **При открытии меню** | Изумруд | Открыт GUI скупщика — продаёт всё подходящее **из инвентаря игрока** |
 | **При открытии сундука** | Сундук | Открыт контейнер — продаёт всё подходящее **из слотов сундука**. Инвентарь игрока не трогается |
 
-Работает с сундуком, бочкой, шалкером, эндер-сундуком, воронкой, раздатчиком, выбрасывателем, вагонеткой-сундуком. Учитываются **включённые категории** и **мин. цена** игрока.
+Работает с сундуком, бочкой, шалкером, эндер-сундуком, воронкой, раздатчиком, выбрасывателем, вагонеткой-сундуком. Учитываются **включённые категории**, **выбор предметов**, **мин. цена** и **текущая ротация** ассортимента (продаются только item-id, которые сейчас в скупщике).
 
 ### Что ещё настраивается
 
 | Опция | Смысл |
 |-------|--------|
 | **Вкл/выкл** | Мастер-переключатель (центр меню или ПКМ по изумруду в скупщике) |
-| **Категории** | Руды, мобы, растения, блоки, прочее — клик вкл/выкл автопродажу для категории |
+| **Категории** | Руды, мобы, растения, блоки, прочее — **ЛКМ** вкл/выкл категорию целиком |
+| **Предметы в категории** | **ПКМ** по иконке категории → экран выбора: какие item-id из этой категории автопродавать |
 | **Уведомления** | Action bar / чат / выкл |
 | **Мин. цена** | Не продавать предметы дешевле порога (с учётом рынка и множителей) |
 | **Куда продавать** | Только при dual buyer: обычный скупщик (Vault) или донатный (PlayerPoints). Клик по слитку в центре 4-го ряда |
+
+### Выбор предметов в категории
+
+После включения категории по умолчанию автопродаются **все предметы этой категории из текущей ротации**. Чтобы оставить, например, только кости из «Мобов» или только алмазы из «Руд»:
+
+1. Меню автопродажи → **ПКМ** по нужной категории.
+2. Откроется сетка **только активных** item-id (как в `/buyer` сейчас).
+3. **Клик** по предмету — вкл/выкл автопродажу для него (подсветка = включён).
+4. Нельзя выключить **последний** включённый предмет в активной категории.
+
+Если предмет **выпал из ротации** — он не показывается в выборе и **не автопродаётся**, даже если раньше был включён. После возврата в ротацию настройка игрока сохраняется (если id не в списке отключённых).
+
+**Пример:** категория «Мобы» включена → ПКМ → выключить всё лишнее, оставить только `bone` → при подборе/сундуке/меню продаются только кости из мобов (и только пока кости в ротации).
+
+### Хранение настроек игрока
+
+Per-player в `data/autosell/{uuid}.yml` (flat) или в колонке `settings` таблицы `soulbuyer_autosell` (MySQL). Текстовый формат:
+
+```
+enabled=true
+trigger=pickup
+notify=actionbar
+min-unit-price=0
+payout=vault
+categories=ores,mobs,plants,blocks,misc
+disabled-items=bone,rotten_flesh
+```
+
+| Ключ | Смысл |
+|------|--------|
+| `categories` | Включённые категории (через запятую) |
+| `disabled-items` | Item-id, **исключённые** из автопродажи внутри включённых категорий. Пусто = все активные предметы категории |
+
+Остальные ключи — режим триггера, уведомления, мин. цена, выплата.
 
 На слоте с книгой — краткая справка для игрока. Если в инвентаре нечего продавать, лишних сообщений в чат нет.
 
@@ -373,36 +408,155 @@ sell-limits:                  # дневные лимиты, permission-tiers
 
 ## Публичное API
 
-Для других плагинов — интерфейс `SoulBuyerApi`, регистрируется в Bukkit `ServicesManager`.
+Интерфейс `SoulBuyerApi` регистрируется в Bukkit `ServicesManager`. Другой плагин подключается через `depend` или `softdepend: [SoulBuyer]`.
+
+### Подключение
 
 ```java
 import bm.b0b0b0.soulBuyer.api.SoulBuyerApi;
 import bm.b0b0b0.soulBuyer.api.SoulBuyerApiProvider;
+import bm.b0b0b0.soulBuyer.api.SoulBuyerSellDelivery;
+import bm.b0b0b0.soulBuyer.api.SoulBuyerSellReturnPolicy;
 import org.bukkit.Bukkit;
 
 SoulBuyerApi api = SoulBuyerApiProvider.get();
 // или: Bukkit.getServicesManager().load(SoulBuyerApi.class)
 
-if (api.isReady()) {
-    api.openBuyerMenu(player);
-    double points = api.cachedPoints(player);
-    double multiplier = api.cachedMultiplier(player);
-    api.quoteItem(player, "diamond").ifPresent(quote -> { /* unitPrice, unitPoints */ });
-    api.fetchProgress(player.getUniqueId()).thenAccept(progress -> { /* async */ });
+if (!api.isReady()) {
+    return;
 }
 ```
 
-| Метод | Назначение |
-|-------|------------|
-| `isReady()` | Плагин загружен и готов |
-| `openBuyerMenu(Player)` | Открыть GUI скупщика |
-| `quoteItem` / `quoteStack` | Цена и очки за единицу с учётом рынка и множителей |
-| `marketCoefficient(itemId)` | Текущий коэффициент рынка |
-| `cachedPoints` / `cachedMultiplier` / `cachedCategoryXp` | Данные из кэша (после продаж или `fetchProgress`) |
-| `fetchProgress(UUID)` | Async загрузка прогресса из хранилища |
-| `isSellable` / `isInActiveCatalog` | Предмет в пуле / в текущей ротации |
-| `isAutosellFeatureEnabled` / `canUseAutosell` / `isAutosellEnabled` | Автопродажа |
+`SoulBuyerApiProvider.get()` всегда возвращает объект: если SoulBuyer ещё не готов — stub с `isReady() == false` и no-op методами.
 
-`plugin.yml` другого плагина: `depend: [ SoulBuyer ]` или `softdepend`.
+### Справочник методов
+
+| Метод | Возврат | Описание |
+|-------|---------|----------|
+| `isReady()` | `boolean` | Плагин загружен, каталог и экономика готовы |
+| `openBuyerMenu(Player)` | — | Открыть стандартное GUI скупщика |
+| `quoteItem(Player, itemId)` | `Optional<ItemUnitQuote>` | Цена и очки за 1 шт. с учётом рынка, множителей и кол-ва в инвентаре |
+| `quoteStack(Player, ItemStack)` | `Optional<ItemUnitQuote>` | То же по предмету в руке / слоте |
+| `marketCoefficient(itemId)` | `double` | Текущий коэффициент рынка (1.0 = база) |
+| `cachedPoints(Player)` | `double` | Очки прогрессии из кэша |
+| `cachedMultiplier(Player)` | `double` | Итоговый личный множитель (permission × категория + бустеры) |
+| `cachedCategoryXp(Player, categoryId)` | `double` | XP категории из кэша |
+| `fetchProgress(UUID)` | `CompletableFuture<PlayerProgress>` | Async загрузка прогресса из хранилища; обновляет кэш |
+| `isSellable(itemId)` | `boolean` | Предмет есть в пуле `items.yml` |
+| `isInActiveCatalog(itemId)` | `boolean` | Предмет в текущей ротации ассортимента |
+| `activeCatalogSize()` | `int` | Сколько предметов сейчас в ротации |
+| `categoryId(itemId)` | `Optional<String>` | Категория из `items.yml` (`ores`, `mobs`, `plants`, `blocks`, `misc`, …) |
+| `categoryId(ItemStack)` | `Optional<String>` | Категория по material + custom model data |
+| `isAutosellFeatureEnabled()` | `boolean` | Автопродажа включена на сервере |
+| `canUseAutosell(Player)` | `boolean` | У игрока право на автопродажу |
+| `isAutosellEnabled(Player)` | `boolean` | Мастер-переключатель автопродажи у игрока (не детали категорий/предметов) |
+| `isSaleInProgress(Player)` | `boolean` | Идёт транзакция продажи (secure storage занят) |
+| `sellAll(Player)` | `boolean` | Продать всё скупаемое из инвентаря |
+| `sellAll(Player, Runnable)` | `boolean` | То же + callback по завершении |
+| `sellAll(Player, SoulBuyerSellDelivery, Runnable)` | `boolean` | Продажа с выбором канала уведомления |
+| `sellItem(Player, itemId)` | `boolean` | Продать весь item-id из инвентаря |
+| `sellItem(Player, itemId, Runnable)` | `boolean` | То же + callback |
+| `sellItemAmount(Player, itemId, amount, Runnable)` | `boolean` | Продать указанное количество из инвентаря |
+| `sellStacks(Player, stacks)` | `boolean` | Продать переданные стеки (см. ниже) |
+| `sellStacks(Player, stacks, Runnable)` | `boolean` | То же + callback |
+| `sellStacks(Player, stacks, returnPolicy, delivery, Runnable)` | `boolean` | Полный контроль политики возврата и уведомлений |
+
+Методы продажи возвращают `false`, если API не готов, игрок null, список пуст или уже идёт другая продажа. `true` — транзакция **принята**; результат смотри в callback и сообщениях игроку.
+
+### Модели
+
+**`ItemUnitQuote`** — `unitPrice`, `unitPoints`, `marketCoefficient`, `playerMultiplier`, `inventoryAmount`.
+
+**`PlayerProgress`** — `playerId`, `points`, `categoryXp` (map categoryId → XP).
+
+### Продажа из инвентаря
+
+`sellAll`, `sellItem`, `sellItemAmount` работают как кнопки в GUI SoulBuyer: забирают предметы из инвентаря игрока, применяют лимиты, бустеры, рынок, прогрессию, выплату (Vault / PlayerPoints по конфигу). При ошибке непроданное возвращается в инвентарь.
+
+```java
+if (api.isSaleInProgress(player)) {
+    return;
+}
+api.sellAll(player, SoulBuyerSellDelivery.ACTION_BAR, () -> {
+    // main thread, после завершения транзакции
+    player.sendMessage("Готово!");
+});
+```
+
+### Продажа из своего GUI — `sellStacks`
+
+Для кастомного меню с кнопкой «Продать всё»:
+
+1. Собери `List<ItemStack>` из слотов своего GUI.
+2. Отфильтруй по категории через `categoryId`, если нужно.
+3. **Убери стеки из GUI** до вызова (при `CALLER_OWNS_ITEMS`).
+4. Вызови `sellStacks`.
+
+SoulBuyer сам считает цену, лимиты, бустеры, очки, XP категорий и платит игроку. Несколько стеков в одном вызове — одна транзакция.
+
+```java
+List<ItemStack> toSell = new ArrayList<>();
+for (ItemStack stack : guiSlots) {
+    if (stack == null || stack.isEmpty()) {
+        continue;
+    }
+    api.categoryId(stack).filter("ores"::equals).ifPresent(category -> toSell.add(stack.clone()));
+}
+if (toSell.isEmpty() || api.isSaleInProgress(player)) {
+    return;
+}
+
+// убрать toSell из своего GUI до вызова
+boolean started = api.sellStacks(
+        player,
+        toSell,
+        SoulBuyerSellReturnPolicy.CALLER_OWNS_ITEMS,
+        SoulBuyerSellDelivery.SILENT,
+        () -> refreshMyGui(player)
+);
+if (!started) {
+    // вернуть предметы в GUI вручную
+}
+```
+
+| `SoulBuyerSellReturnPolicy` | Поведение при отмене / ошибке |
+|-----------------------------|-------------------------------|
+| `RETURN_TO_PLAYER` | Дефолт. Непроданное возвращается в инвентарь игрока |
+| `CALLER_OWNS_ITEMS` | SoulBuyer не трогает предметы — откат GUI делает ваш плагин |
+
+| `SoulBuyerSellDelivery` | Уведомление игроку |
+|-------------------------|-------------------|
+| `CHAT` | Сообщение в чат (дефолт) |
+| `ACTION_BAR` | Action bar |
+| `SILENT` | Без сообщений SoulBuyer |
+
+Часть стеков может не продаться из‑за **дневного лимита** — лишнее вернётся игроку (или останется у caller при `CALLER_OWNS_ITEMS`).
+
+### Категории — `categoryId`
+
+Категория берётся из поля `category` в `items.yml` для каждого item-id. Типичные значения: `ores`, `mobs`, `plants`, `blocks`, `misc`. Свои id допустимы — главное, чтобы совпадали с фильтрами в GUI и автопродаже.
+
+```java
+api.categoryId("raw_iron");           // Optional["ores"]
+api.categoryId(player.getInventory().getItemInMainHand()); // по material + CMD
+api.isSellable("raw_iron");          // true, если id в пуле
+api.isInActiveCatalog("raw_iron");   // true, если сейчас в ротации
+```
+
+### Кэш прогресса
+
+`cachedPoints` / `cachedMultiplier` / `cachedCategoryXp` читают память. После join данные подгружаются async; для точных значений до открытия меню вызови `fetchProgress(uuid).join()` или дождись callback.
+
+`fetchProgress` безопасен с async-потока; мутация Bukkit API из его callback — только через `runTask`.
+
+**Автопродажа и API:** выбор категорий и отдельных item-id настраивается только через GUI SoulBuyer (`gui/autosell.yml`). Методов `toggleAutosellItem` / `getDisabledItems` в `SoulBuyerApi` нет — для кастомных меню используй `sellStacks` и свою фильтрацию по `categoryId` / `isInActiveCatalog`.
+
+### Зависимость в `plugin.yml`
+
+```yaml
+softdepend: [SoulBuyer]
+```
+
+или `depend: [SoulBuyer]`, если ваш плагин не работает без скупщика.
 
 ---

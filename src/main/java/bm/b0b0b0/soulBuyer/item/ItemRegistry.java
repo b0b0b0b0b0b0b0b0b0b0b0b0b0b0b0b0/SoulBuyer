@@ -3,6 +3,8 @@ package bm.b0b0b0.soulBuyer.item;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
+import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -32,6 +34,7 @@ public final class ItemRegistry {
             poolById.put(entry.getKey(), new SellableItemDefinition(
                     entry.getKey(),
                     settings.material,
+                    settings.displayMaterial,
                     settings.category,
                     settings.basePrice,
                     settings.basePoints,
@@ -69,6 +72,21 @@ public final class ItemRegistry {
         return active;
     }
 
+    public List<SellableItemDefinition> activeByCategory(String categoryId) {
+        if (categoryId == null || categoryId.isBlank()) {
+            return List.of();
+        }
+        List<SellableItemDefinition> active = new ArrayList<>();
+        for (String id : activeIds) {
+            SellableItemDefinition definition = poolById.get(id);
+            if (definition != null && categoryId.equals(definition.categoryId())) {
+                active.add(definition);
+            }
+        }
+        active.sort(java.util.Comparator.comparing(SellableItemDefinition::id));
+        return active;
+    }
+
     public List<SellableItemDefinition> pool() {
         return new ArrayList<>(poolById.values());
     }
@@ -85,8 +103,23 @@ public final class ItemRegistry {
         return activeIds.contains(itemId);
     }
 
+    public boolean existsInPool(String itemId) {
+        return itemId != null && !itemId.isBlank() && poolById.containsKey(itemId);
+    }
+
+    public Optional<SellableItemDefinition> definitionInPool(String itemId) {
+        if (itemId == null || itemId.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(poolById.get(itemId));
+    }
+
+    public Optional<SellableItemDefinition> resolve(String itemId) {
+        return byId(itemId).or(() -> definitionInPool(itemId));
+    }
+
     public Optional<SellableItemDefinition> find(ItemStack itemStack) {
-        if (itemStack == null || itemStack.getType().isAir()) {
+        if (ItemStacks.isAbsent(itemStack)) {
             return Optional.empty();
         }
         for (String id : activeIds) {
@@ -99,7 +132,7 @@ public final class ItemRegistry {
     }
 
     public Optional<SellableItemDefinition> findInPool(ItemStack itemStack) {
-        if (itemStack == null || itemStack.getType().isAir()) {
+        if (ItemStacks.isAbsent(itemStack)) {
             return Optional.empty();
         }
         for (SellableItemDefinition definition : poolById.values()) {
@@ -118,7 +151,7 @@ public final class ItemRegistry {
     }
 
     private boolean matches(SellableItemDefinition definition, ItemStack itemStack) {
-        Material material = parseMaterial(definition.material());
+        Material material = MaterialParser.parse(definition.material());
         if (itemStack.getType() != material) {
             return false;
         }
@@ -128,13 +161,5 @@ public final class ItemRegistry {
         ItemMeta meta = itemStack.getItemMeta();
         return meta != null && meta.hasCustomModelData()
                 && definition.customModelData() == meta.getCustomModelData();
-    }
-
-    private Material parseMaterial(String name) {
-        try {
-            return Material.valueOf(name.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            return Material.STONE;
-        }
     }
 }

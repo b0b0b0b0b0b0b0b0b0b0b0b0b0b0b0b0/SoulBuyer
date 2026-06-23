@@ -41,11 +41,13 @@ gui:
     item-name: "&#E9D5FF{name}"
     item-lore:
       - "&#9CA3AFCategory: {category}"
+      - "<empty>"
       - "&#9CA3AFPrice: &#E9D5FF{price} &#9CA3AF/ each"
       - "&#9CA3AFPoints: &#E9D5FF{points} &#9CA3AF/ each"
       - "&#9CA3AFMarket: &#E9D5FF×{market}"
     item-lore-playerpoints:
       - "&#9CA3AFCategory: {category}"
+      - "<empty>"
       - "&#9CA3AFPayout: &#FCD34D{price} &#9CA3AFpoints / each"
       - "&#9CA3AFPoints: &#E9D5FF{points} &#9CA3AF/ each"
       - "&#9CA3AFMarket: &#E9D5FF×{market}"
@@ -145,8 +147,16 @@ gui:
       - "&#9CA3AFClick to change"
     category-lore:
       - "&#9CA3AFAutosell for this category"
-      - "&#D8B4FE▶ Click to toggle on/off"
+      - "&#D8B4FE▶ LMB — toggle category"
+      - "&#D8B4FE▶ RMB — pick items"
       - "&#9CA3AFNow: {category_state}"
+    category-items-title: "&#4C1D95◆ &#E9D5FF{category} &#4C1D95◆"
+    category-item-lore:
+      - "&#9CA3AFAutosell: {item_state}"
+      - "&#D8B4FE▶ Click to toggle"
+      - "&#6B7280Only items in the current catalog rotation"
+    item-on: "&#86EFACenabled"
+    item-off: "&#FF5555disabled"
     category-on: "&#86EFACenabled"
     category-off: "&#FF5555disabled"
     state-on: "&#86EFACenabled"
@@ -177,6 +187,7 @@ gui:
       - "&#9CA3AF(regular or donate buyer)."
       - " "
       - "&#9CA3AFCategories — what to sell."
+      - "&#9CA3AFRMB on category — pick items."
       - "&#9CA3AFBell and nugget — notify"
       - "&#9CA3AFand minimum unit price."
   boosters:

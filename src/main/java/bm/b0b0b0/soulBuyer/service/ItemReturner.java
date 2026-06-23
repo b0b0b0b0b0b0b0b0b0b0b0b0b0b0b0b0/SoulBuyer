@@ -1,5 +1,6 @@
 package bm.b0b0b0.soulBuyer.service;
 
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,11 +20,18 @@ public final class ItemReturner {
     }
 
     public static void give(Player player, ItemStack stack) {
-        if (stack == null || stack.getType().isAir()) {
+        if (ItemStacks.isAbsent(stack)) {
             return;
         }
         Map<Integer, ItemStack> leftover = player.getInventory().addItem(stack);
         leftover.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+    }
+
+    public static void returnSecured(Player player, List<ItemStack> stacks, boolean restoreToPlayer) {
+        if (!restoreToPlayer || player == null || !player.isOnline()) {
+            return;
+        }
+        returnItems(player, stacks);
     }
 
     public static void returnItemsOffline(UUID playerId, List<ItemStack> sellStacks, List<ItemStack> returnStacks) {

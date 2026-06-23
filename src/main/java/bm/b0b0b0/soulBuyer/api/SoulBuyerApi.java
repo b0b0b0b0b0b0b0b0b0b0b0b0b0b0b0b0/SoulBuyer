@@ -2,6 +2,7 @@ package bm.b0b0b0.soulBuyer.api;
 
 import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -39,4 +40,34 @@ public interface SoulBuyerApi {
     boolean canUseAutosell(Player player);
 
     boolean isAutosellEnabled(Player player);
+
+    boolean isSaleInProgress(Player player);
+
+    boolean sellAll(Player player);
+
+    boolean sellAll(Player player, Runnable onComplete);
+
+    boolean sellAll(Player player, SoulBuyerSellDelivery delivery, Runnable onComplete);
+
+    boolean sellItem(Player player, String itemId);
+
+    boolean sellItem(Player player, String itemId, Runnable onComplete);
+
+    boolean sellItemAmount(Player player, String itemId, int amount, Runnable onComplete);
+
+    Optional<String> categoryId(String itemId);
+
+    Optional<String> categoryId(ItemStack itemStack);
+
+    boolean sellStacks(Player player, List<ItemStack> stacks);
+
+    boolean sellStacks(Player player, List<ItemStack> stacks, Runnable onComplete);
+
+    boolean sellStacks(
+            Player player,
+            List<ItemStack> stacks,
+            SoulBuyerSellReturnPolicy returnPolicy,
+            SoulBuyerSellDelivery delivery,
+            Runnable onComplete
+    );
 }

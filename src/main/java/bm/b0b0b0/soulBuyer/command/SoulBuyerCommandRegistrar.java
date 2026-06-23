@@ -6,7 +6,16 @@ import bm.b0b0b0.soulBuyer.config.ConfigurationLoader;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
 import bm.b0b0b0.soulBuyer.message.MessageService;
+import bm.b0b0b0.soulBuyer.debug.GuiItemTooltipDebugger;
+import bm.b0b0b0.soulBuyer.gui.BuyerMenu;
+import bm.b0b0b0.soulBuyer.gui.BuyerMenuItemRenderer;
+import bm.b0b0b0.soulBuyer.item.ItemRegistry;
+import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
+import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
+import bm.b0b0b0.soulBuyer.service.SellService;
+import bm.b0b0b0.soulBuyer.gui.BuyerGuiService;
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -16,10 +25,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.Optional;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 
 public final class SoulBuyerCommandRegistrar {
 
@@ -70,7 +83,16 @@ public final class SoulBuyerCommandRegistrar {
                 .executes(context -> openMenu(context, donateMenu))
                 .then(Commands.literal("admin")
                         .requires(source -> source.getSender().hasPermission(permissionAdmin()))
-                        .then(Commands.literal("reload").executes(this::reload)));
+                        .then(Commands.literal("reload").executes(this::reload))
+                        .then(Commands.literal("debug-tooltip")
+                                .executes(context -> debugTooltip(context, null))
+                                .then(Commands.literal("hand").executes(this::debugTooltipHand))
+                                .then(Commands.literal("menu").executes(this::debugTooltipMenu))
+                                .then(Commands.argument("itemId", StringArgumentType.word())
+                                        .executes(context -> debugTooltip(
+                                                context,
+                                                StringArgumentType.getString(context, "itemId")
+                                        )))));
     }
 
     private int openMenu(CommandContext<CommandSourceStack> context, boolean donateMenu) {
@@ -110,6 +132,95 @@ public final class SoulBuyerCommandRegistrar {
         return Command.SINGLE_SUCCESS;
     }
 
+    private int debugTooltip(CommandContext<CommandSourceStack> context, String itemId) {
+        CommandSender sender = context.getSource().getSender();
+        if (!(sender instanceof Player player)) {
+            send(sender, "command.player-only");
+            return 0;
+        }
+        if (!requireReady(sender)) {
+            return 0;
+        }
+        BuyerGuiService guiService = runtime.buyerGuiService();
+        ItemRegistry itemRegistry = runtime.itemRegistry();
+        BuyerMenuItemRenderer itemRenderer = guiService.itemRenderer();
+        SellService sellService = guiService.sellService();
+        PluginConfig pluginConfig = guiService.config();
+        SellableItemDefinition definition = resolveDebugDefinition(itemRegistry, itemId);
+        if (definition == null) {
+            sender.sendMessage(Component.text("[SoulBuyer] item not found: " + (itemId == null ? "netherite_upgrade" : itemId)));
+            return 0;
+        }
+        Material sourceMaterial = Material.valueOf(definition.material().toUpperCase(Locale.ROOT));
+        ItemUnitQuote quote = sellService.unitQuote(player, definition);
+        ItemStack hiddenStack = itemRenderer.render(player, definition, quote);
+        ItemStack rawStack = ItemStack.of(sourceMaterial, Math.max(1, Math.min(64, quote.inventoryAmount())));
+        plugin.tooltipDebugHeader(player, plugin.getPluginMeta().getVersion(), pluginConfig);
+        GuiItemTooltipDebugger.dumpComparison(plugin.debug(), player, sourceMaterial, hiddenStack, rawStack);
+        player.getInventory().addItem(hiddenStack.clone());
+        sender.sendMessage(Component.text("[SoulBuyer] tooltip debug dumped to console for item "
+                + definition.id() + " (material=" + definition.material() + "). Hidden-path item added to inventory."));
+        sender.sendMessage(Component.text("[SoulBuyer] hideVanillaItemTooltip="
+                + pluginConfig.buyerGui().hideVanillaItemTooltip + " debug="
+                + pluginConfig.debug()));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int debugTooltipHand(CommandContext<CommandSourceStack> context) {
+        CommandSender sender = context.getSource().getSender();
+        if (!(sender instanceof Player player)) {
+            send(sender, "command.player-only");
+            return 0;
+        }
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        plugin.tooltipDebugHeader(player, plugin.getPluginMeta().getVersion(), config);
+        GuiItemTooltipDebugger.dump(plugin.debug(), player, "HAND", hand);
+        sender.sendMessage(Component.text("[SoulBuyer] hand tooltip debug dumped to console."));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int debugTooltipMenu(CommandContext<CommandSourceStack> context) {
+        CommandSender sender = context.getSource().getSender();
+        if (!(sender instanceof Player player)) {
+            send(sender, "command.player-only");
+            return 0;
+        }
+        Inventory top = player.getOpenInventory().getTopInventory();
+        if (!(top.getHolder(false) instanceof BuyerMenu)) {
+            sender.sendMessage(Component.text("[SoulBuyer] open /buyer first, then run debug-tooltip menu"));
+            return 0;
+        }
+        plugin.tooltipDebugHeader(player, plugin.getPluginMeta().getVersion(), config);
+        int dumped = 0;
+        for (int slot = 0; slot < top.getSize(); slot++) {
+            ItemStack stack = top.getItem(slot);
+            if (stack == null || stack.getType().isAir()) {
+                continue;
+            }
+            GuiItemTooltipDebugger.dump(plugin.debug(), player, "MENU slot=" + slot, stack);
+            dumped++;
+            if (dumped >= 5) {
+                break;
+            }
+        }
+        sender.sendMessage(Component.text("[SoulBuyer] dumped " + dumped + " menu slots to console."));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private SellableItemDefinition resolveDebugDefinition(ItemRegistry itemRegistry, String itemId) {
+        String resolvedId = itemId == null || itemId.isBlank() ? "netherite_upgrade" : itemId.toLowerCase(Locale.ROOT);
+        Optional<SellableItemDefinition> direct = itemRegistry.resolve(resolvedId);
+        if (direct.isPresent()) {
+            return direct.get();
+        }
+        for (SellableItemDefinition definition : itemRegistry.all()) {
+            if (definition.material().toUpperCase(Locale.ROOT).contains("SMITHING_TEMPLATE")) {
+                return definition;
+            }
+        }
+        return itemRegistry.all().stream().findFirst().orElse(null);
+    }
+
     private int reload(CommandContext<CommandSourceStack> context) {
         CommandSender sender = context.getSource().getSender();
         ConfigurationLoader loader = configurationLoader;
@@ -122,6 +233,7 @@ public final class SoulBuyerCommandRegistrar {
                 PluginConfig reloaded = loader.reload(plugin, plugin.debug());
                 messageService.reloadAsync(plugin, () -> {
                     runtime.updatePluginConfig(reloaded);
+                    messageService.setDisableGuiItemItalic(reloaded.generalGui().disableItemItalic);
                     runtime.itemRegistry().reload(reloaded);
                     if (runtime.catalogRotationService() != null) {
                         runtime.catalogRotationService().reload(reloaded);

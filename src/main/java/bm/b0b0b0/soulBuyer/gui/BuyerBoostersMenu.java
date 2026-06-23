@@ -20,7 +20,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class BuyerBoostersMenu implements InventoryHolder {
+public final class BuyerBoostersMenu implements SoulBuyerGuiHolder {
 
     private final JavaPlugin plugin;
     private final Player player;
@@ -86,15 +86,11 @@ public final class BuyerBoostersMenu implements InventoryHolder {
     }
 
     public void onClose() {
-        if (closingIntentionally || !player.isOnline()) {
-            return;
-        }
-        Bukkit.getScheduler().runTask(plugin, () -> navigation.openBuyer(player, parentSession));
+        BuyerSubMenuNavigation.onUnexpectedClose(plugin, navigation, player, parentSession, closingIntentionally);
     }
 
     private void goBack() {
-        closingIntentionally = true;
-        navigation.openBuyer(player, parentSession);
+        BuyerSubMenuNavigation.goBack(navigation, player, parentSession, () -> closingIntentionally = true);
     }
 
     private void purchase(String offerId) {
@@ -118,24 +114,16 @@ public final class BuyerBoostersMenu implements InventoryHolder {
     }
 
     private void fillFrame() {
-        GuiGeneralSettings.GuiElementSettings border = boostersGui.elements.get("border");
-        GuiGeneralSettings.GuiElementSettings separator = boostersGui.elements.get("separator");
-        if (border == null) {
-            return;
-        }
-        for (int slot : GuiLayoutHelper.frameSlots(boostersGui.size)) {
-            if (actions.containsKey(slot)) {
-                continue;
-            }
-            inventory.setItem(slot, itemFactory.filler(player, border));
-        }
-        if (separator != null) {
-            for (int slot : List.of(10, 11, 12, 13, 14, 15, 16, 19, 25, 28, 34)) {
-                if (!actions.containsKey(slot)) {
-                    inventory.setItem(slot, itemFactory.filler(player, separator));
-                }
-            }
-        }
+        GuiLayoutHelper.fillBorderAndSeparators(
+                inventory,
+                player,
+                itemFactory,
+                boostersGui.size,
+                boostersGui.elements.get("border"),
+                boostersGui.elements.get("separator"),
+                actions::containsKey,
+                new int[]{10, 11, 12, 13, 14, 15, 16, 19, 25, 28, 34}
+        );
     }
 
     private void fillOffers() {

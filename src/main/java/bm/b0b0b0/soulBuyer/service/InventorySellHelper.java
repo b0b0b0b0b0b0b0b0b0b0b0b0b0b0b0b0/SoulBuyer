@@ -2,8 +2,11 @@ package bm.b0b0b0.soulBuyer.service;
 
 import bm.b0b0b0.soulBuyer.item.ItemRegistry;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.bukkit.entity.Player;
@@ -12,17 +15,27 @@ import org.bukkit.inventory.ItemStack;
 
 public final class InventorySellHelper {
 
+    public enum CatalogScope {
+        ACTIVE,
+        POOL
+    }
+
+    public record GroupedStacks(
+            Map<String, Integer> amounts,
+            Map<String, List<ItemStack>> stacksByItemId,
+            Map<String, SellableItemDefinition> definitions
+    ) {
+    }
+
+    private static final Predicate<SellableItemDefinition> ANY = definition -> true;
+
     private InventorySellHelper() {
     }
 
     public static int countMatching(Player player, ItemRegistry itemRegistry, String itemId) {
         int total = 0;
         for (ItemStack stack : player.getInventory().getStorageContents()) {
-            if (stack == null || stack.getType().isAir()) {
-                continue;
-            }
-            Optional<SellableItemDefinition> definition = itemRegistry.findInPool(stack);
-            if (definition.isPresent() && definition.get().id().equals(itemId)) {
+            if (matches(stack, itemRegistry, definition -> definition.id().equals(itemId))) {
                 total += stack.getAmount();
             }
         }
@@ -43,11 +56,7 @@ public final class InventorySellHelper {
         ItemStack[] contents = player.getInventory().getStorageContents();
         for (int index = 0; index < contents.length && remaining > 0; index++) {
             ItemStack stack = contents[index];
-            if (stack == null || stack.getType().isAir()) {
-                continue;
-            }
-            Optional<SellableItemDefinition> definition = itemRegistry.findInPool(stack);
-            if (definition.isEmpty() || !definition.get().id().equals(itemId)) {
+            if (!matches(stack, itemRegistry, definition -> definition.id().equals(itemId))) {
                 continue;
             }
             int take = Math.min(remaining, stack.getAmount());
@@ -70,20 +79,8 @@ public final class InventorySellHelper {
             ItemRegistry itemRegistry,
             Predicate<SellableItemDefinition> filter
     ) {
-        List<ItemStack> collected = new ArrayList<>();
         ItemStack[] contents = player.getInventory().getStorageContents();
-        for (int index = 0; index < contents.length; index++) {
-            ItemStack stack = contents[index];
-            if (stack == null || stack.getType().isAir()) {
-                continue;
-            }
-            Optional<SellableItemDefinition> definition = itemRegistry.findInPool(stack);
-            if (definition.isEmpty() || !filter.test(definition.get())) {
-                continue;
-            }
-            collected.add(stack.clone());
-            contents[index] = null;
-        }
+        List<ItemStack> collected = collectAndClearSlots(contents, itemRegistry, filter);
         player.getInventory().setStorageContents(contents);
         return collected;
     }
@@ -93,23 +90,106 @@ public final class InventorySellHelper {
             ItemRegistry itemRegistry,
             Predicate<SellableItemDefinition> filter
     ) {
-        List<ItemStack> collected = new ArrayList<>();
         if (inventory == null) {
-            return collected;
+            return List.of();
         }
-        ItemStack[] contents = inventory.getContents();
-        for (int index = 0; index < contents.length; index++) {
-            ItemStack stack = contents[index];
-            if (stack == null || stack.getType().isAir()) {
-                continue;
+        List<ItemStack> collected = new ArrayList<>();
+        for (int index = 0; index < inventory.getSize(); index++) {
+            ItemStack stack = inventory.getItem(index);
+            if (collectMatch(collected, stack, itemRegistry, filter)) {
+                inventory.setItem(index, null);
             }
-            Optional<SellableItemDefinition> definition = itemRegistry.findInPool(stack);
-            if (definition.isEmpty() || !filter.test(definition.get())) {
-                continue;
-            }
-            collected.add(stack.clone());
-            inventory.setItem(index, null);
         }
         return collected;
+    }
+
+    public static List<ItemStack> filterSellableStacks(ItemRegistry itemRegistry, List<ItemStack> stacks) {
+        List<ItemStack> collected = new ArrayList<>();
+        if (stacks == null) {
+            return collected;
+        }
+        for (ItemStack stack : stacks) {
+            if (matches(stack, itemRegistry, ANY)) {
+                collected.add(stack.clone());
+            }
+        }
+        return collected;
+    }
+
+    public static GroupedStacks groupStacks(
+            ItemRegistry itemRegistry,
+            List<ItemStack> stacks,
+            CatalogScope scope
+    ) {
+        Map<String, Integer> amounts = new HashMap<>();
+        Map<String, List<ItemStack>> stacksByItemId = new HashMap<>();
+        Map<String, SellableItemDefinition> definitions = new HashMap<>();
+        if (stacks == null) {
+            return new GroupedStacks(amounts, stacksByItemId, definitions);
+        }
+        for (ItemStack stack : stacks) {
+            Optional<SellableItemDefinition> definition = definition(stack, itemRegistry, scope, ANY);
+            if (definition.isEmpty()) {
+                continue;
+            }
+            String itemId = definition.get().id();
+            amounts.merge(itemId, stack.getAmount(), Integer::sum);
+            stacksByItemId.computeIfAbsent(itemId, ignored -> new ArrayList<>()).add(stack.clone());
+            definitions.put(itemId, definition.get());
+        }
+        return new GroupedStacks(amounts, stacksByItemId, definitions);
+    }
+
+    private static List<ItemStack> collectAndClearSlots(
+            ItemStack[] contents,
+            ItemRegistry itemRegistry,
+            Predicate<SellableItemDefinition> filter
+    ) {
+        List<ItemStack> collected = new ArrayList<>();
+        for (int index = 0; index < contents.length; index++) {
+            if (collectMatch(collected, contents[index], itemRegistry, filter)) {
+                contents[index] = null;
+            }
+        }
+        return collected;
+    }
+
+    private static boolean collectMatch(
+            List<ItemStack> collected,
+            ItemStack stack,
+            ItemRegistry itemRegistry,
+            Predicate<SellableItemDefinition> filter
+    ) {
+        if (!matches(stack, itemRegistry, filter)) {
+            return false;
+        }
+        collected.add(stack.clone());
+        return true;
+    }
+
+    private static boolean matches(
+            ItemStack stack,
+            ItemRegistry itemRegistry,
+            Predicate<SellableItemDefinition> filter
+    ) {
+        return definition(stack, itemRegistry, CatalogScope.POOL, filter).isPresent();
+    }
+
+    private static Optional<SellableItemDefinition> definition(
+            ItemStack stack,
+            ItemRegistry itemRegistry,
+            CatalogScope scope,
+            Predicate<SellableItemDefinition> filter
+    ) {
+        if (ItemStacks.isAbsent(stack)) {
+            return Optional.empty();
+        }
+        Optional<SellableItemDefinition> definition = scope == CatalogScope.ACTIVE
+                ? itemRegistry.find(stack)
+                : itemRegistry.findInPool(stack);
+        if (definition.isEmpty() || !filter.test(definition.get())) {
+            return Optional.empty();
+        }
+        return definition;
     }
 }

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.UUID;
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -103,26 +104,15 @@ public final class SellService {
             BuyerPayoutMode payoutMode
     ) {
         UUID playerId = player.getUniqueId();
-        if (!context.secureStorage().tryBegin(playerId)) {
-            context.messageService().send(player, "sell.in-progress");
-            complete(onComplete);
+        if (!beginSaleSession(player, onComplete)) {
             return;
         }
         if (isLimitExhaustedForItem(player, itemId)) {
-            context.secureStorage().cancelLock(playerId);
-            context.messageService().send(player, "sell.limit-reached");
-            complete(onComplete);
+            abortLockedSale(playerId, onComplete, true, "sell.limit-reached");
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAmount(player, context.itemRegistry(), itemId, amount);
-        if (collected.isEmpty()) {
-            context.secureStorage().cancelLock(playerId);
-            context.messageService().send(player, "sell.empty");
-            complete(onComplete);
-            return;
-        }
-        context.secureStorage().replaceSecuredItems(playerId, collected);
-        continueSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
+        startCollectedSale(player, collected, delivery, onComplete, payoutMode, true);
     }
 
     public void sellFromContainer(
@@ -187,29 +177,15 @@ public final class SellService {
             boolean notifyWhenEmpty,
             BuyerPayoutMode payoutMode
     ) {
-        UUID playerId = player.getUniqueId();
-        if (!context.secureStorage().tryBegin(playerId)) {
-            context.messageService().send(player, "sell.in-progress");
-            complete(onComplete);
+        if (!beginSaleSession(player, onComplete)) {
             return;
         }
         if (isLimitExhaustedForFilter(player, filter)) {
-            context.secureStorage().cancelLock(playerId);
-            context.messageService().send(player, "sell.limit-reached");
-            complete(onComplete);
+            abortLockedSale(player.getUniqueId(), onComplete, true, "sell.limit-reached");
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAndRemove(player, context.itemRegistry(), filter);
-        if (collected.isEmpty()) {
-            context.secureStorage().cancelLock(playerId);
-            if (notifyWhenEmpty) {
-                context.messageService().send(player, "sell.empty");
-            }
-            complete(onComplete);
-            return;
-        }
-        context.secureStorage().replaceSecuredItems(playerId, collected);
-        continueSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
+        startCollectedSale(player, collected, delivery, onComplete, payoutMode, notifyWhenEmpty);
     }
 
     public void sellFromContainer(
@@ -220,25 +196,15 @@ public final class SellService {
             Runnable onComplete,
             BuyerPayoutMode payoutMode
     ) {
-        UUID playerId = player.getUniqueId();
-        if (!context.secureStorage().tryBegin(playerId)) {
-            context.messageService().send(player, "sell.in-progress");
-            complete(onComplete);
+        if (!beginSaleSession(player, onComplete)) {
             return;
         }
         if (!AutosellInventoryGuard.isStorageContainer(container)) {
-            context.secureStorage().cancelLock(playerId);
-            complete(onComplete);
+            abortLockedSale(player.getUniqueId(), onComplete, false, null);
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAndRemove(container, context.itemRegistry(), filter);
-        if (collected.isEmpty()) {
-            context.secureStorage().cancelLock(playerId);
-            complete(onComplete);
-            return;
-        }
-        context.secureStorage().replaceSecuredItems(playerId, collected);
-        continueSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
+        startCollectedSale(player, collected, delivery, onComplete, payoutMode, false);
     }
 
     public void beginSecuredSale(Player player, List<ItemStack> sellStacks, List<ItemStack> returnStacks, Runnable onComplete) {
@@ -270,11 +236,25 @@ public final class SellService {
             Runnable onComplete,
             BuyerPayoutMode payoutMode
     ) {
+        beginSecuredSale(player, sellStacks, returnStacks, true, delivery, onComplete, payoutMode);
+    }
+
+    public void beginSecuredSale(
+            Player player,
+            List<ItemStack> sellStacks,
+            List<ItemStack> returnStacks,
+            boolean restoreFailedItemsToPlayer,
+            SaleDelivery delivery,
+            Runnable onComplete,
+            BuyerPayoutMode payoutMode
+    ) {
         UUID playerId = player.getUniqueId();
         if (!context.secureStorage().tryBegin(playerId)) {
             context.messageService().send(player, "sell.in-progress");
-            ItemReturner.returnItems(player, sellStacks);
-            ItemReturner.returnItems(player, returnStacks);
+            if (restoreFailedItemsToPlayer) {
+                ItemReturner.returnItems(player, sellStacks);
+                ItemReturner.returnItems(player, returnStacks);
+            }
             complete(onComplete);
             return;
         }
@@ -282,7 +262,15 @@ public final class SellService {
                 playerId,
                 concat(cloneStacks(sellStacks), cloneStacks(returnStacks))
         );
-        continueSecuredSale(player, sellStacks, returnStacks, delivery, onComplete, payoutMode);
+        continueSecuredSale(
+                player,
+                sellStacks,
+                returnStacks,
+                restoreFailedItemsToPlayer,
+                delivery,
+                onComplete,
+                payoutMode
+        );
     }
 
     private void continueSecuredSale(
@@ -293,11 +281,23 @@ public final class SellService {
             Runnable onComplete,
             BuyerPayoutMode payoutMode
     ) {
+        continueSecuredSale(player, sellStacks, returnStacks, true, delivery, onComplete, payoutMode);
+    }
+
+    private void continueSecuredSale(
+            Player player,
+            List<ItemStack> sellStacks,
+            List<ItemStack> returnStacks,
+            boolean restoreFailedItemsToPlayer,
+            SaleDelivery delivery,
+            Runnable onComplete,
+            BuyerPayoutMode payoutMode
+    ) {
         BuyerPayoutMode mode = payoutMode == null ? context.config().defaultOpenPayoutMode() : payoutMode;
         UUID playerId = player.getUniqueId();
         if (!context.economyPayoutRouter().available(mode)) {
             context.messageService().send(player, noEconomyKey(mode));
-            context.secureStorage().tryAbort(playerId).forEach(stack -> ItemReturner.give(player, stack));
+            restoreSecuredItems(player, playerId, restoreFailedItemsToPlayer);
             complete(onComplete);
             return;
         }
@@ -314,7 +314,7 @@ public final class SellService {
             });
         }).thenAccept(prepared -> runMain(() -> {
             if (prepared.quote().lines().isEmpty()) {
-                context.secureStorage().tryAbort(playerId).forEach(stack -> ItemReturner.give(player, stack));
+                restoreSecuredItems(player, playerId, restoreFailedItemsToPlayer);
                 if (player.isOnline()) {
                     String key = prepared.split().sellStacks().isEmpty() && !sellStacks.isEmpty()
                             ? "sell.limit-reached"
@@ -325,11 +325,20 @@ public final class SellService {
                 return;
             }
             List<ItemStack> mergedReturn = concat(returnStacks, prepared.split().returnStacks());
-            finalizeSale(player, prepared.quote(), mergedReturn, delivery, onComplete, mode, periodKey);
+            finalizeSale(
+                    player,
+                    prepared.quote(),
+                    mergedReturn,
+                    restoreFailedItemsToPlayer,
+                    delivery,
+                    onComplete,
+                    mode,
+                    periodKey
+            );
         })).exceptionally(throwable -> {
             debug.warn("sell async failed for " + player.getName() + ": " + throwable.getMessage());
             runMain(() -> {
-                context.secureStorage().tryAbort(playerId).forEach(stack -> ItemReturner.give(player, stack));
+                restoreSecuredItems(player, playerId, restoreFailedItemsToPlayer);
                 complete(onComplete);
             });
             return null;
@@ -348,22 +357,16 @@ public final class SellService {
     }
 
     private boolean isLimitExhaustedForFilter(Player player, Predicate<SellableItemDefinition> filter) {
-        if (!context.sellLimitService().enabled()) {
-            return false;
-        }
-        PlayerSellLimitUsage usage = context.cachedSellLimitUsage(player.getUniqueId());
-        if (usage == null || !context.sellLimitService().periodKey().equals(usage.periodKey())) {
+        PlayerSellLimitUsage usage = currentSellLimitUsage(player);
+        if (usage == null) {
             return false;
         }
         return !context.sellLimitService().hasSellCapacity(player, usage, filter);
     }
 
     private boolean isLimitExhaustedForItem(Player player, String itemId) {
-        if (!context.sellLimitService().enabled()) {
-            return false;
-        }
-        PlayerSellLimitUsage usage = context.cachedSellLimitUsage(player.getUniqueId());
-        if (usage == null || !context.sellLimitService().periodKey().equals(usage.periodKey())) {
+        PlayerSellLimitUsage usage = currentSellLimitUsage(player);
+        if (usage == null) {
             return false;
         }
         return !context.sellLimitService().hasSellCapacity(player, usage, itemId);
@@ -373,6 +376,62 @@ public final class SellService {
         if (onComplete != null) {
             onComplete.run();
         }
+    }
+
+    private void restoreSecuredItems(Player player, UUID playerId, boolean restoreToPlayer) {
+        ItemReturner.returnSecured(player, context.secureStorage().tryAbort(playerId), restoreToPlayer);
+    }
+
+    private void cancelFinalize(Player player, UUID playerId, boolean restoreToPlayer) {
+        ItemReturner.returnSecured(player, context.secureStorage().cancelFinalize(playerId), restoreToPlayer);
+    }
+
+    private boolean beginSaleSession(Player player, Runnable onComplete) {
+        if (context.secureStorage().tryBegin(player.getUniqueId())) {
+            return true;
+        }
+        context.messageService().send(player, "sell.in-progress");
+        complete(onComplete);
+        return false;
+    }
+
+    private void abortLockedSale(UUID playerId, Runnable onComplete, boolean notify, String messageKey) {
+        context.secureStorage().cancelLock(playerId);
+        if (notify && messageKey != null) {
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null && player.isOnline()) {
+                context.messageService().send(player, messageKey);
+            }
+        }
+        complete(onComplete);
+    }
+
+    private void startCollectedSale(
+            Player player,
+            List<ItemStack> collected,
+            SaleDelivery delivery,
+            Runnable onComplete,
+            BuyerPayoutMode payoutMode,
+            boolean notifyWhenEmpty
+    ) {
+        UUID playerId = player.getUniqueId();
+        if (collected.isEmpty()) {
+            abortLockedSale(playerId, onComplete, notifyWhenEmpty, "sell.empty");
+            return;
+        }
+        context.secureStorage().replaceSecuredItems(playerId, collected);
+        continueSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
+    }
+
+    private PlayerSellLimitUsage currentSellLimitUsage(Player player) {
+        if (!context.sellLimitService().enabled()) {
+            return null;
+        }
+        PlayerSellLimitUsage usage = context.cachedSellLimitUsage(player.getUniqueId());
+        if (usage == null || !context.sellLimitService().periodKey().equals(usage.periodKey())) {
+            return null;
+        }
+        return usage;
     }
 
     private void applySellLimitCache(UUID playerId, String periodKey, List<SellLine> lines) {
@@ -398,6 +457,19 @@ public final class SellService {
             BuyerPayoutMode payoutMode,
             String periodKey
     ) {
+        finalizeSale(player, quote, returnStacks, true, delivery, onComplete, payoutMode, periodKey);
+    }
+
+    private void finalizeSale(
+            Player player,
+            SellQuote quote,
+            List<ItemStack> returnStacks,
+            boolean restoreFailedItemsToPlayer,
+            SaleDelivery delivery,
+            Runnable onComplete,
+            BuyerPayoutMode payoutMode,
+            String periodKey
+    ) {
         UUID playerId = player.getUniqueId();
         if (!context.secureStorage().tryEnterFinalize(playerId)) {
             debug.log("sell finalize aborted (session gone) " + player.getName());
@@ -407,7 +479,7 @@ public final class SellService {
             return;
         }
         if (!player.isOnline()) {
-            context.secureStorage().cancelFinalize(playerId).forEach(stack -> ItemReturner.give(player, stack));
+            cancelFinalize(player, playerId, restoreFailedItemsToPlayer);
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -415,7 +487,7 @@ public final class SellService {
         }
         if (!context.progressionService().isValidPayout(quote.totalMoney())) {
             debug.warn("sell payout rejected for " + player.getName() + " money=" + quote.totalMoney());
-            context.secureStorage().cancelFinalize(playerId).forEach(stack -> ItemReturner.give(player, stack));
+            cancelFinalize(player, playerId, restoreFailedItemsToPlayer);
             context.messageService().send(player, "sell.payout-limit");
             if (onComplete != null) {
                 onComplete.run();
@@ -425,7 +497,7 @@ public final class SellService {
         boolean paid = context.economyPayoutRouter().deposit(player, payoutMode, quote.totalMoney());
         if (!paid) {
             debug.warn("sell deposit failed for " + player.getName() + " money=" + quote.totalMoney());
-            context.secureStorage().cancelFinalize(playerId).forEach(stack -> ItemReturner.give(player, stack));
+            cancelFinalize(player, playerId, restoreFailedItemsToPlayer);
             context.messageService().send(player, "sell.failed");
             if (onComplete != null) {
                 onComplete.run();
@@ -493,11 +565,11 @@ public final class SellService {
     }
 
     public void abortAndReturn(Player player) {
-        UUID playerId = player.getUniqueId();
-        List<ItemStack> secured = context.secureStorage().tryAbort(playerId);
-        for (ItemStack stack : secured) {
-            ItemReturner.give(player, stack);
-        }
+        ItemReturner.returnSecured(
+                player,
+                context.secureStorage().tryAbort(player.getUniqueId()),
+                true
+        );
     }
 
     public void cleanupOnQuit(Player player) {
@@ -508,6 +580,93 @@ public final class SellService {
         return context.cachedProgress(player.getUniqueId());
     }
 
+    public double displayMultiplier(Player player) {
+        PlayerProgress progress = cachedProgress(player);
+        double permission = context.progressionService().permissionMultiplier(player);
+        double category = context.progressionService().categoryBonus(progress);
+        double additive = context.boosterService().additiveMultiplier(player);
+        return permission * category + additive;
+    }
+
+    public void preloadProgress(Player player) {
+        preloadProgress(player, null);
+    }
+
+    public void preloadProgress(Player player, Runnable onLoaded) {
+        if (player == null) {
+            return;
+        }
+        UUID playerId = player.getUniqueId();
+        context.playerProgressRepository().find(playerId).thenAccept(progress -> runMain(() -> {
+            context.cacheProgress(progress);
+            if (onLoaded != null) {
+                onLoaded.run();
+            }
+        }));
+    }
+
+    public void ensureProgressLoaded(Player player, Runnable onReady) {
+        if (player == null) {
+            return;
+        }
+        UUID playerId = player.getUniqueId();
+        if (context.isProgressHydrated(playerId)) {
+            runMain(onReady);
+            return;
+        }
+        preloadProgress(player, onReady);
+    }
+
+    public boolean sellProvidedStacks(
+            Player player,
+            List<ItemStack> stacks,
+            boolean restoreFailedItemsToPlayer,
+            SaleDelivery delivery,
+            Runnable onComplete
+    ) {
+        return sellProvidedStacks(
+                player,
+                stacks,
+                restoreFailedItemsToPlayer,
+                delivery,
+                onComplete,
+                context.config().defaultOpenPayoutMode()
+        );
+    }
+
+    public boolean sellProvidedStacks(
+            Player player,
+            List<ItemStack> stacks,
+            boolean restoreFailedItemsToPlayer,
+            SaleDelivery delivery,
+            Runnable onComplete,
+            BuyerPayoutMode payoutMode
+    ) {
+        if (player == null || stacks == null || stacks.isEmpty()) {
+            return false;
+        }
+        List<ItemStack> sellable = InventorySellHelper.filterSellableStacks(context.itemRegistry(), stacks);
+        if (sellable.isEmpty()) {
+            return false;
+        }
+        beginSecuredSale(
+                player,
+                sellable,
+                List.of(),
+                restoreFailedItemsToPlayer,
+                delivery,
+                onComplete,
+                payoutMode
+        );
+        return true;
+    }
+
+    public void warmProgressCache(PlayerProgress progress) {
+        if (progress != null) {
+            context.cacheProgress(progress);
+        }
+    }
+
     private void runMain(Runnable runnable) {
         Bukkit.getScheduler().runTask(plugin, runnable);
     }
@@ -515,7 +674,7 @@ public final class SellService {
     private List<ItemStack> cloneStacks(List<ItemStack> stacks) {
         List<ItemStack> clones = new ArrayList<>();
         for (ItemStack stack : stacks) {
-            if (stack != null && !stack.getType().isAir()) {
+            if (ItemStacks.isPresent(stack)) {
                 clones.add(stack.clone());
             }
         }
@@ -559,6 +718,8 @@ public final class SellService {
 
         void cacheProgress(bm.b0b0b0.soulBuyer.model.PlayerProgress progress);
 
+        boolean isProgressHydrated(UUID playerId);
+
         bm.b0b0b0.soulBuyer.model.PlayerSellLimitUsage cachedSellLimitUsage(UUID playerId);
 
         void cacheSellLimitUsage(bm.b0b0b0.soulBuyer.model.PlayerSellLimitUsage usage);
@@ -568,5 +729,7 @@ public final class SellService {
         bm.b0b0b0.soulBuyer.limit.SellLimitService sellLimitService();
 
         bm.b0b0b0.soulBuyer.repository.PlayerSellLimitRepository sellLimitRepository();
+
+        bm.b0b0b0.soulBuyer.booster.BoosterService boosterService();
     }
 }

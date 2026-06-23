@@ -2,6 +2,7 @@ package bm.b0b0b0.soulBuyer.api;
 
 import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.PlayerProgress;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -86,6 +87,72 @@ public final class UnavailableSoulBuyerApi implements SoulBuyerApi {
 
     @Override
     public boolean isAutosellEnabled(Player player) {
+        return false;
+    }
+
+    @Override
+    public boolean isSaleInProgress(Player player) {
+        return false;
+    }
+
+    @Override
+    public boolean sellAll(Player player) {
+        return false;
+    }
+
+    @Override
+    public boolean sellAll(Player player, Runnable onComplete) {
+        return false;
+    }
+
+    @Override
+    public boolean sellAll(Player player, SoulBuyerSellDelivery delivery, Runnable onComplete) {
+        return false;
+    }
+
+    @Override
+    public boolean sellItem(Player player, String itemId) {
+        return false;
+    }
+
+    @Override
+    public boolean sellItem(Player player, String itemId, Runnable onComplete) {
+        return false;
+    }
+
+    @Override
+    public boolean sellItemAmount(Player player, String itemId, int amount, Runnable onComplete) {
+        return false;
+    }
+
+    @Override
+    public Optional<String> categoryId(String itemId) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<String> categoryId(ItemStack itemStack) {
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean sellStacks(Player player, List<ItemStack> stacks) {
+        return false;
+    }
+
+    @Override
+    public boolean sellStacks(Player player, List<ItemStack> stacks, Runnable onComplete) {
+        return false;
+    }
+
+    @Override
+    public boolean sellStacks(
+            Player player,
+            List<ItemStack> stacks,
+            SoulBuyerSellReturnPolicy returnPolicy,
+            SoulBuyerSellDelivery delivery,
+            Runnable onComplete
+    ) {
         return false;
     }
 }

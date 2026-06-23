@@ -1,8 +1,10 @@
 package bm.b0b0b0.soulBuyer.item;
 
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.translation.GlobalTranslator;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -12,7 +14,7 @@ public final class ItemNameResolver {
     private final PlainTextComponentSerializer plain = PlainTextComponentSerializer.plainText();
 
     public Component displayComponent(Player player, ItemStack itemStack) {
-        if (itemStack == null || itemStack.getType().isAir()) {
+        if (ItemStacks.isAbsent(itemStack)) {
             return Component.empty();
         }
         ItemMeta meta = itemStack.getItemMeta();
@@ -30,11 +32,20 @@ public final class ItemNameResolver {
     }
 
     public String plainMaterialName(Player player, org.bukkit.Material material) {
-        return plain.serialize(Component.translatable(material.translationKey()));
+        return plain.serialize(translatedMaterialName(player, material));
+    }
+
+    public Component materialNameComponent(org.bukkit.Material material) {
+        return Component.translatable(material.translationKey());
+    }
+
+    public Component translatedMaterialName(Player player, org.bukkit.Material material) {
+        Locale locale = player != null ? player.locale() : Locale.getDefault();
+        return GlobalTranslator.render(materialNameComponent(material), locale);
     }
 
     public String formatAmount(Player player, ItemStack itemStack) {
-        if (itemStack == null || itemStack.getType().isAir()) {
+        if (ItemStacks.isAbsent(itemStack)) {
             return "";
         }
         String name = plainName(player, itemStack);

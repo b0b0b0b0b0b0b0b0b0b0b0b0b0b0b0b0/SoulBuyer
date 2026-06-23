@@ -4,13 +4,13 @@ import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.item.ItemRegistry;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
+import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.concurrent.ThreadLocalRandom;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -31,8 +31,10 @@ public final class BuyerCategoryIconAnimator {
     private final List<CategorySlot> categorySlots = new ArrayList<>();
     private final Map<String, Integer> previewIndex = new HashMap<>();
 
-    private Supplier<String> activeCategoryFilter = () -> "";
-    private BooleanSupplier processingCheck = () -> false;
+    private Function<String, Boolean> categorySelected = categoryId -> false;
+    private Function<String, String[]> categoryPairs = categoryId -> new String[0];
+    private BooleanSupplier pausedCheck = () -> false;
+    private BooleanSupplier menuOpenCheck = () -> false;
     private BukkitTask task;
 
     public BuyerCategoryIconAnimator(
@@ -42,7 +44,8 @@ public final class BuyerCategoryIconAnimator {
             ItemRegistry itemRegistry,
             GuiItemFactory itemFactory,
             Inventory inventory,
-            Map<String, GuiGeneralSettings.GuiElementSettings> elements
+            Map<String, GuiGeneralSettings.GuiElementSettings> elements,
+            String categoryAction
     ) {
         this.plugin = plugin;
         this.player = player;
@@ -50,15 +53,19 @@ public final class BuyerCategoryIconAnimator {
         this.itemRegistry = itemRegistry;
         this.itemFactory = itemFactory;
         this.inventory = inventory;
-        indexCategorySlots(elements);
+        indexCategorySlots(elements, categoryAction);
     }
 
     public void bind(
-            Supplier<String> activeCategoryFilter,
-            BooleanSupplier processingCheck
+            Function<String, Boolean> categorySelected,
+            Function<String, String[]> categoryPairs,
+            BooleanSupplier pausedCheck,
+            BooleanSupplier menuOpenCheck
     ) {
-        this.activeCategoryFilter = activeCategoryFilter;
-        this.processingCheck = processingCheck;
+        this.categorySelected = categorySelected == null ? categoryId -> false : categorySelected;
+        this.categoryPairs = categoryPairs == null ? categoryId -> new String[0] : categoryPairs;
+        this.pausedCheck = pausedCheck == null ? () -> false : pausedCheck;
+        this.menuOpenCheck = menuOpenCheck == null ? () -> false : menuOpenCheck;
     }
 
     public void onMenuRendered() {
@@ -90,11 +97,11 @@ public final class BuyerCategoryIconAnimator {
             stop();
             return;
         }
-        if (!(player.getOpenInventory().getTopInventory().getHolder(false) instanceof BuyerMenu)) {
+        if (!menuOpenCheck.getAsBoolean()) {
             stop();
             return;
         }
-        if (processingCheck.getAsBoolean()) {
+        if (pausedCheck.getAsBoolean()) {
             return;
         }
         advanceIndices();
@@ -118,19 +125,16 @@ public final class BuyerCategoryIconAnimator {
 
     private void applyCurrentIcons() {
         seedIndicesIfNeeded();
-        String activeFilter = activeCategoryFilter.get();
-        if (activeFilter == null) {
-            activeFilter = "";
-        }
         for (CategorySlot categorySlot : categorySlots) {
             SellableItemDefinition preview = currentPreview(categorySlot.categoryId);
             Material material = preview == null
-                    ? parseMaterial(categorySlot.element.material)
-                    : parseMaterial(preview.material());
-            boolean selected = activeFilter.equals(categorySlot.categoryId);
+                    ? MaterialParser.parse(categorySlot.element.material)
+                    : MaterialParser.parse(preview.material());
+            String[] pairs = categoryPairs.apply(categorySlot.categoryId);
+            boolean selected = Boolean.TRUE.equals(categorySelected.apply(categorySlot.categoryId));
             ItemStack itemStack = selected
-                    ? itemFactory.buildSelectedMaterial(player, categorySlot.element, material)
-                    : itemFactory.buildMaterial(player, categorySlot.element, material);
+                    ? itemFactory.buildSelectedMaterial(player, categorySlot.element, material, pairs)
+                    : itemFactory.buildMaterial(player, categorySlot.element, material, pairs);
             if (preview != null && preview.usesCustomModelData()) {
                 itemFactory.applyCustomModelData(itemStack, preview.customModelData());
             }
@@ -169,14 +173,14 @@ public final class BuyerCategoryIconAnimator {
                 .toList();
     }
 
-    private void indexCategorySlots(Map<String, GuiGeneralSettings.GuiElementSettings> elements) {
+    private void indexCategorySlots(Map<String, GuiGeneralSettings.GuiElementSettings> elements, String categoryAction) {
         categorySlots.clear();
         for (Map.Entry<String, GuiGeneralSettings.GuiElementSettings> entry : elements.entrySet()) {
             if (!entry.getKey().startsWith("category-")) {
                 continue;
             }
             GuiGeneralSettings.GuiElementSettings element = entry.getValue();
-            if (!"CATEGORY_FILTER".equals(element.action) || element.slot < 0) {
+            if (!categoryAction.equals(element.action) || element.slot < 0) {
                 continue;
             }
             String categoryId = element.categoryFilter == null ? "" : element.categoryFilter;
@@ -184,14 +188,6 @@ public final class BuyerCategoryIconAnimator {
                 continue;
             }
             categorySlots.add(new CategorySlot(element.slot, element, categoryId));
-        }
-    }
-
-    private Material parseMaterial(String name) {
-        try {
-            return Material.valueOf(name.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            return Material.STONE;
         }
     }
 

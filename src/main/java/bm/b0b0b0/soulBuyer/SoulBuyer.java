@@ -27,6 +27,7 @@ import bm.b0b0b0.soulBuyer.io.SoulBuyerIoExecutor;
 import bm.b0b0b0.soulBuyer.item.ItemNameResolver;
 import bm.b0b0b0.soulBuyer.item.ItemRegistry;
 import bm.b0b0b0.soulBuyer.listener.BuyerInventoryListener;
+import bm.b0b0b0.soulBuyer.listener.PlayerDataWarmupListener;
 import bm.b0b0b0.soulBuyer.market.MarketService;
 import bm.b0b0b0.soulBuyer.market.PriceQuoteService;
 import bm.b0b0b0.soulBuyer.message.MessageLoader;
@@ -82,6 +83,16 @@ public final class SoulBuyer extends JavaPlugin {
 
     public SoulBuyerDebugLog debug() {
         return debugLog;
+    }
+
+    public void tooltipDebugHeader(Player player, String version, PluginConfig pluginConfig) {
+        debugLog.tooltipDebug("pluginVersion=" + version
+                + " paper=" + Bukkit.getVersion()
+                + " bukkit=" + Bukkit.getBukkitVersion()
+                + " player=" + player.getName()
+                + " hideVanillaItemTooltip=" + pluginConfig.buyerGui().hideVanillaItemTooltip
+                + " tooltipBuild=paper-model-v2"
+                + " debugConfig=" + pluginConfig.debug());
     }
 
     @Override
@@ -184,6 +195,7 @@ public final class SoulBuyer extends JavaPlugin {
         }
 
         messageService = new MessageService(messageLoader);
+        messageService.setDisableGuiItemItalic(pluginConfig.generalGui().disableItemItalic);
         commandRegistrar.bind(pluginConfig, messageService, configurationLoader);
         debugLog.boot("command registrar bound, runtime.ready=" + runtime.isReady());
 
@@ -470,6 +482,7 @@ public final class SoulBuyer extends JavaPlugin {
         GuiItemFactory guiItemFactory = new GuiItemFactory(messageService);
         BuyerMenuItemRenderer buyerMenuItemRenderer = new BuyerMenuItemRenderer(
                 this,
+                pluginConfig,
                 messageService,
                 itemNameResolver
         );
@@ -523,6 +536,7 @@ public final class SoulBuyer extends JavaPlugin {
         getServer().getServicesManager().register(SoulBuyerApi.class, soulBuyerApi, this, ServicePriority.Normal);
 
         getServer().getPluginManager().registerEvents(new BuyerInventoryListener(sellService), this);
+        getServer().getPluginManager().registerEvents(new PlayerDataWarmupListener(sellService), this);
         getServer().getPluginManager().registerEvents(
                 new AutosellPickupListener(this, autosellService, pluginConfig.autosell().pickupDelayTicks),
                 this
@@ -531,6 +545,8 @@ public final class SoulBuyer extends JavaPlugin {
         for (Player online : getServer().getOnlinePlayers()) {
             autosellService.preload(online);
             boosterService.preload(online);
+            sellService.preloadProgress(online);
+            sellService.preloadSellLimitUsage(online);
         }
 
         long flushInterval = Math.max(1000L, pluginConfig.market().saleFlushIntervalMs);

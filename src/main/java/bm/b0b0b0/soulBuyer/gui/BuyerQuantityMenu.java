@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
+import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +28,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class BuyerQuantityMenu implements InventoryHolder {
+public final class BuyerQuantityMenu implements SoulBuyerGuiHolder {
 
     private final JavaPlugin plugin;
     private final Player player;
@@ -132,15 +132,11 @@ public final class BuyerQuantityMenu implements InventoryHolder {
     }
 
     public void onClose() {
-        if (closingIntentionally || !player.isOnline()) {
-            return;
-        }
-        Bukkit.getScheduler().runTask(plugin, () -> navigation.openBuyer(player, parentSession));
+        BuyerSubMenuNavigation.onUnexpectedClose(plugin, navigation, player, parentSession, closingIntentionally);
     }
 
     private void goBack() {
-        closingIntentionally = true;
-        navigation.openBuyer(player, parentSession);
+        BuyerSubMenuNavigation.goBack(navigation, player, parentSession, () -> closingIntentionally = true);
     }
 
     private void confirmSell() {
@@ -204,25 +200,16 @@ public final class BuyerQuantityMenu implements InventoryHolder {
     }
 
     private void fillFrame() {
-        GuiGeneralSettings.GuiElementSettings border = quantityGui.elements.get("border");
-        GuiGeneralSettings.GuiElementSettings separator = quantityGui.elements.get("separator");
-        if (border == null) {
-            return;
-        }
-        for (int slot : GuiLayoutHelper.frameSlots(quantityGui.size)) {
-            if (reservedSlots.contains(slot)) {
-                continue;
-            }
-            inventory.setItem(slot, itemFactory.filler(player, border));
-        }
-        if (separator != null) {
-            List<Integer> separatorSlots = List.of(10, 11, 12, 13, 14, 15, 16);
-            for (int slot : separatorSlots) {
-                if (!reservedSlots.contains(slot)) {
-                    inventory.setItem(slot, itemFactory.filler(player, separator));
-                }
-            }
-        }
+        GuiLayoutHelper.fillBorderAndSeparators(
+                inventory,
+                player,
+                itemFactory,
+                quantityGui.size,
+                quantityGui.elements.get("border"),
+                quantityGui.elements.get("separator"),
+                reservedSlots::contains,
+                new int[]{10, 11, 12, 13, 14, 15, 16}
+        );
     }
 
     private void fillControls() {
@@ -273,16 +260,8 @@ public final class BuyerQuantityMenu implements InventoryHolder {
     }
 
     private Component itemNameComponent(Player player) {
-        Material material = parseMaterial(definition.material());
+        Material material = MaterialParser.parse(definition.material());
         return itemNameResolver.displayComponent(player, ItemStack.of(material));
-    }
-
-    private Material parseMaterial(String name) {
-        try {
-            return Material.valueOf(name.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            return Material.STONE;
-        }
     }
 
     private void indexReservedSlots() {

@@ -1,18 +1,19 @@
 package bm.b0b0b0.soulBuyer.gui;
 
+import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.item.ItemNameResolver;
 import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.BuyerPayoutMode;
 import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
+import bm.b0b0b0.soulBuyer.util.MaterialParser;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -20,17 +21,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class BuyerMenuItemRenderer {
 
-    private final JavaPlugin plugin;
+    private final PluginConfig config;
     private final MessageService messageService;
     private final ItemNameResolver itemNameResolver;
     private final NamespacedKey itemIdKey;
 
     public BuyerMenuItemRenderer(
             JavaPlugin plugin,
+            PluginConfig config,
             MessageService messageService,
             ItemNameResolver itemNameResolver
     ) {
-        this.plugin = plugin;
+        this.config = config;
         this.messageService = messageService;
         this.itemNameResolver = itemNameResolver;
         this.itemIdKey = new NamespacedKey(plugin, "item-id");
@@ -46,33 +48,154 @@ public final class BuyerMenuItemRenderer {
             ItemUnitQuote quote,
             BuyerPayoutMode payoutMode
     ) {
-        Material material = parseMaterial(definition.material());
-        ItemStack itemStack = ItemStack.of(material, Math.max(1, Math.min(64, quote.inventoryAmount())));
-        ItemMeta meta = itemStack.getItemMeta();
-        Component itemName = itemNameResolver.displayComponent(player, itemStack);
-        meta.displayName(messageService.guiItemName(player, "gui.buyer.item-name", itemName));
-        meta.lore(buildLore(player, definition, quote, payoutMode));
-        meta.getPersistentDataContainer().set(itemIdKey, PersistentDataType.STRING, definition.id());
-        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
-        itemStack.setItemMeta(meta);
+        Material sourceMaterial = MaterialParser.parse(definition.material());
+        Material visualMaterial = resolveVisualMaterial(definition, sourceMaterial);
+        Component nameComponent = buildNameComponent(player, definition, sourceMaterial);
+        String plainName = plainItemName(player, definition, sourceMaterial);
+        return buildItemStack(
+                player,
+                definition,
+                quote,
+                payoutMode,
+                sourceMaterial,
+                visualMaterial,
+                nameComponent,
+                plainName,
+                true,
+                List.of(),
+                false
+        );
+    }
+
+    public ItemStack renderAutosellCategoryItem(
+            Player player,
+            SellableItemDefinition definition,
+            ItemUnitQuote quote,
+            BuyerPayoutMode payoutMode,
+            List<Component> autosellLore,
+            boolean enabled
+    ) {
+        Material sourceMaterial = MaterialParser.parse(definition.material());
+        Material visualMaterial = resolveVisualMaterial(definition, sourceMaterial);
+        Component nameComponent = buildNameComponent(player, definition, sourceMaterial);
+        String plainName = plainItemName(player, definition, sourceMaterial);
+        return buildItemStack(
+                player,
+                definition,
+                quote,
+                payoutMode,
+                sourceMaterial,
+                visualMaterial,
+                nameComponent,
+                plainName,
+                false,
+                autosellLore,
+                enabled
+        );
+    }
+
+    private ItemStack buildItemStack(
+            Player player,
+            SellableItemDefinition definition,
+            ItemUnitQuote quote,
+            BuyerPayoutMode payoutMode,
+            Material sourceMaterial,
+            Material visualMaterial,
+            Component nameComponent,
+            String plainName,
+            boolean includeInteractionHints,
+            List<Component> extraLore,
+            boolean selected
+    ) {
+        List<Component> lore = buildLore(
+                player,
+                definition,
+                quote,
+                payoutMode,
+                sourceMaterial,
+                plainName,
+                includeInteractionHints
+        );
+        lore.addAll(extraLore);
+        int amount = Math.max(1, Math.min(64, quote.inventoryAmount()));
+        Integer customModelData = definition.usesCustomModelData() ? definition.customModelData() : null;
+
+        ItemStack itemStack;
+        if (config.buyerGui().hideVanillaItemTooltip) {
+            itemStack = GuiVanillaTooltipHider.buildDisplayItem(
+                    sourceMaterial,
+                    definition.displayMaterial(),
+                    amount,
+                    nameComponent,
+                    lore,
+                    customModelData,
+                    itemIdKey,
+                    definition.id()
+            );
+        } else {
+            itemStack = ItemStack.of(visualMaterial, amount);
+            ItemMeta meta = itemStack.getItemMeta();
+            meta.displayName(nameComponent);
+            meta.lore(lore);
+            meta.getPersistentDataContainer().set(itemIdKey, PersistentDataType.STRING, definition.id());
+            if (customModelData != null) {
+                meta.setCustomModelData(customModelData);
+            }
+            itemStack.setItemMeta(meta);
+        }
+        applySelectionGlint(itemStack, selected);
         return itemStack;
     }
 
     public String readItemId(ItemStack itemStack) {
+        String fromComponents = GuiVanillaTooltipHider.readPersistentString(itemStack, itemIdKey);
+        if (fromComponents != null) {
+            return fromComponents;
+        }
         if (itemStack == null || !itemStack.hasItemMeta()) {
             return null;
         }
         return itemStack.getItemMeta().getPersistentDataContainer().get(itemIdKey, PersistentDataType.STRING);
     }
 
+    private Component buildNameComponent(Player player, SellableItemDefinition definition, Material sourceMaterial) {
+        String customNameKey = "items." + definition.id() + ".name";
+        if (messageService.hasKey(player, customNameKey)) {
+            return messageService.guiText(player, customNameKey);
+        }
+        return messageService.guiTextWithComponent(
+                player,
+                config.buyerGui().itemNameKey,
+                "name",
+                itemNameResolver.materialNameComponent(sourceMaterial)
+        );
+    }
+
+    private void applySelectionGlint(ItemStack itemStack, boolean enabled) {
+        itemStack.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, enabled);
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta != null) {
+            meta.setEnchantmentGlintOverride(enabled);
+            itemStack.setItemMeta(meta);
+        }
+    }
+
     private List<Component> buildLore(
             Player player,
             SellableItemDefinition definition,
             ItemUnitQuote quote,
-            BuyerPayoutMode payoutMode
+            BuyerPayoutMode payoutMode,
+            Material sourceMaterial,
+            String plainName,
+            boolean includeInteractionHints
     ) {
         String categoryName = messageService.raw(player, "categories." + definition.categoryId());
         String[] pairs = new String[]{
+                "name", plainName,
+                "item", plainName,
+                "id", definition.id(),
+                "item_id", definition.id(),
+                "material", definition.material(),
                 "price", itemNameResolver.formatMoney(quote.unitPrice()),
                 "points", itemNameResolver.formatMoney(quote.unitPoints()),
                 "market", itemNameResolver.formatMoney(quote.marketCoefficient()),
@@ -80,23 +203,37 @@ public final class BuyerMenuItemRenderer {
                 "amount", String.valueOf(quote.inventoryAmount()),
                 "category", categoryName
         };
+        var buyerGui = config.buyerGui();
         String loreKey = payoutMode == BuyerPayoutMode.PLAYER_POINTS
-                ? "gui.buyer.item-lore-playerpoints"
-                : "gui.buyer.item-lore";
+                ? buyerGui.itemLorePlayerPointsKey
+                : buyerGui.itemLoreKey;
         List<Component> lore = new ArrayList<>(messageService.guiLore(player, loreKey, pairs));
-        if (quote.inventoryAmount() > 0) {
-            lore.addAll(messageService.guiLore(player, "gui.buyer.item-sell-hint", pairs));
-        } else {
-            lore.addAll(messageService.guiLore(player, "gui.buyer.item-empty-hint", pairs));
+        String customLoreKey = "items." + definition.id() + ".lore";
+        if (messageService.hasKey(player, customLoreKey)) {
+            lore.addAll(messageService.guiLore(player, customLoreKey, pairs));
+        }
+        if (includeInteractionHints) {
+            if (quote.inventoryAmount() > 0) {
+                lore.addAll(messageService.guiLore(player, buyerGui.itemSellHintKey, pairs));
+            } else {
+                lore.addAll(messageService.guiLore(player, buyerGui.itemEmptyHintKey, pairs));
+            }
         }
         return lore;
     }
 
-    private Material parseMaterial(String name) {
-        try {
-            return Material.valueOf(name.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            return Material.STONE;
+    private String plainItemName(Player player, SellableItemDefinition definition, Material sourceMaterial) {
+        String customKey = "items." + definition.id() + ".name";
+        if (messageService.hasKey(player, customKey)) {
+            return messageService.guiRaw(player, customKey);
         }
+        return itemNameResolver.plainMaterialName(player, sourceMaterial);
+    }
+
+    private Material resolveVisualMaterial(SellableItemDefinition definition, Material sourceMaterial) {
+        if (definition.displayMaterial() != null && !definition.displayMaterial().isBlank()) {
+            return MaterialParser.parse(definition.displayMaterial());
+        }
+        return sourceMaterial;
     }
 }

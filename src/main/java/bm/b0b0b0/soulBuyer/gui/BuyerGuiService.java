@@ -56,6 +56,18 @@ public final class BuyerGuiService implements BuyerMenuNavigation {
         this.debug = debug;
     }
 
+    public PluginConfig config() {
+        return config;
+    }
+
+    public BuyerMenuItemRenderer itemRenderer() {
+        return itemRenderer;
+    }
+
+    public SellService sellService() {
+        return sellService;
+    }
+
     public void open(Player player) {
         openBuyer(player, BuyerMenuSession.withPayout(config.defaultOpenPayoutMode()));
     }
@@ -74,23 +86,25 @@ public final class BuyerGuiService implements BuyerMenuNavigation {
     }
 
     private void openBuyerMenu(Player player, BuyerMenuSession session) {
-        BuyerMenu menu = new BuyerMenu(
-                plugin,
-                player,
-                config,
-                messageService,
-                itemFactory,
-                itemRegistry,
-                itemNameResolver,
-                itemRenderer,
-                sellService,
-                buyerStatsService,
-                autosellService,
-                boosterService,
-                this,
-                session
-        );
-        player.openInventory(menu.getInventory());
+        sellService.ensureProgressLoaded(player, () -> {
+            BuyerMenu menu = new BuyerMenu(
+                    plugin,
+                    player,
+                    config,
+                    messageService,
+                    itemFactory,
+                    itemRegistry,
+                    itemNameResolver,
+                    itemRenderer,
+                    sellService,
+                    buyerStatsService,
+                    autosellService,
+                    boosterService,
+                    this,
+                    session
+            );
+            player.openInventory(menu.getInventory());
+        });
     }
 
     @Override
@@ -139,9 +153,31 @@ public final class BuyerGuiService implements BuyerMenuNavigation {
                 config,
                 messageService,
                 itemFactory,
+                itemRegistry,
                 autosellService,
                 this,
                 session
+        );
+        player.openInventory(menu.getInventory());
+    }
+
+    @Override
+    public void openAutosellCategory(Player player, String categoryId, BuyerMenuSession session) {
+        debug.log("GUI open autosell category for " + player.getName() + " category=" + categoryId);
+        BuyerAutosellCategoryMenu menu = new BuyerAutosellCategoryMenu(
+                plugin,
+                player,
+                config,
+                messageService,
+                itemFactory,
+                itemRegistry,
+                itemRenderer,
+                sellService,
+                autosellService,
+                this,
+                session,
+                categoryId,
+                0
         );
         player.openInventory(menu.getInventory());
     }

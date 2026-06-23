@@ -1,9 +1,11 @@
 package bm.b0b0b0.soulBuyer.listener;
 
+import bm.b0b0b0.soulBuyer.gui.BuyerAutosellCategoryMenu;
 import bm.b0b0b0.soulBuyer.gui.BuyerAutosellMenu;
 import bm.b0b0b0.soulBuyer.gui.BuyerBoostersMenu;
 import bm.b0b0b0.soulBuyer.gui.BuyerMenu;
 import bm.b0b0b0.soulBuyer.gui.BuyerQuantityMenu;
+import bm.b0b0b0.soulBuyer.gui.SoulBuyerGuiHolder;
 import bm.b0b0b0.soulBuyer.service.SellService;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -30,10 +32,7 @@ public final class BuyerInventoryListener implements Listener {
     public void onClick(InventoryClickEvent event) {
         Inventory top = event.getView().getTopInventory();
         InventoryHolder holder = top.getHolder(false);
-        if (!(holder instanceof BuyerMenu)
-                && !(holder instanceof BuyerQuantityMenu)
-                && !(holder instanceof BuyerAutosellMenu)
-                && !(holder instanceof BuyerBoostersMenu)) {
+        if (!(holder instanceof SoulBuyerGuiHolder)) {
             return;
         }
         int topSize = top.getSize();
@@ -60,7 +59,10 @@ public final class BuyerInventoryListener implements Listener {
             }
             quantityMenu.handleClick(rawSlot);
         } else if (holder instanceof BuyerAutosellMenu autosellMenu) {
-            autosellMenu.handleClick(rawSlot);
+            boolean rightClick = event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT;
+            autosellMenu.handleClick(rawSlot, rightClick);
+        } else if (holder instanceof BuyerAutosellCategoryMenu categoryMenu) {
+            categoryMenu.handleClick(rawSlot);
         } else if (holder instanceof BuyerBoostersMenu boostersMenu) {
             boostersMenu.handleClick(rawSlot);
         }
@@ -69,11 +71,7 @@ public final class BuyerInventoryListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onDrag(InventoryDragEvent event) {
         Inventory top = event.getView().getTopInventory();
-        InventoryHolder holder = top.getHolder(false);
-        if (!(holder instanceof BuyerMenu)
-                && !(holder instanceof BuyerQuantityMenu)
-                && !(holder instanceof BuyerAutosellMenu)
-                && !(holder instanceof BuyerBoostersMenu)) {
+        if (!(top.getHolder(false) instanceof SoulBuyerGuiHolder)) {
             return;
         }
         int topSize = top.getSize();
@@ -94,6 +92,8 @@ public final class BuyerInventoryListener implements Listener {
             quantityMenu.onClose();
         } else if (holder instanceof BuyerAutosellMenu autosellMenu) {
             autosellMenu.onClose();
+        } else if (holder instanceof BuyerAutosellCategoryMenu categoryMenu) {
+            categoryMenu.onClose();
         } else if (holder instanceof BuyerBoostersMenu boostersMenu) {
             boostersMenu.onClose();
         }

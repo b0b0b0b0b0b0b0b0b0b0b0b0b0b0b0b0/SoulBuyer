@@ -1,9 +1,6 @@
 package bm.b0b0b0.soulBuyer.autosell;
 
-import bm.b0b0b0.soulBuyer.gui.BuyerAutosellMenu;
-import bm.b0b0b0.soulBuyer.gui.BuyerBoostersMenu;
-import bm.b0b0b0.soulBuyer.gui.BuyerMenu;
-import bm.b0b0b0.soulBuyer.gui.BuyerQuantityMenu;
+import bm.b0b0b0.soulBuyer.gui.SoulBuyerGuiHolder;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.block.DoubleChest;
@@ -39,10 +36,7 @@ public final class AutosellInventoryGuard {
     }
 
     private static boolean isSoulBuyerGui(InventoryHolder holder) {
-        return holder instanceof BuyerMenu
-                || holder instanceof BuyerQuantityMenu
-                || holder instanceof BuyerAutosellMenu
-                || holder instanceof BuyerBoostersMenu;
+        return holder instanceof SoulBuyerGuiHolder;
     }
 
     private static boolean isWorldStorageHolder(InventoryHolder holder) {

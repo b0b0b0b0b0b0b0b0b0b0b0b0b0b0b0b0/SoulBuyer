@@ -9,6 +9,7 @@ import bm.b0b0b0.soulBuyer.repository.PlayerAutosellRepository;
 import bm.b0b0b0.soulBuyer.service.InventorySellHelper;
 import bm.b0b0b0.soulBuyer.service.SaleDelivery;
 import bm.b0b0b0.soulBuyer.service.SellService;
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -150,6 +151,39 @@ public final class AutosellService {
         save(player, current.withCategories(categories), onSaved);
     }
 
+    public void toggleItem(Player player, String itemId, Runnable onSaved) {
+        if (!canAccess(player) || itemId == null || itemId.isBlank()) {
+            return;
+        }
+        if (!itemRegistry.isActive(itemId)) {
+            return;
+        }
+        var definition = itemRegistry.definitionInPool(itemId);
+        if (definition.isEmpty()) {
+            return;
+        }
+        PlayerAutosellSettings current = settings(player);
+        Set<String> disabledItems = new LinkedHashSet<>(current.disabledItems());
+        if (disabledItems.contains(itemId)) {
+            disabledItems.remove(itemId);
+        } else if (!canDisableItem(current, definition.get())) {
+            return;
+        } else {
+            disabledItems.add(itemId);
+        }
+        save(player, current.withDisabledItems(disabledItems), onSaved);
+    }
+
+    public boolean isItemEnabled(PlayerAutosellSettings autosellSettings, SellableItemDefinition definition) {
+        if (definition == null || !itemRegistry.isActive(definition.id())) {
+            return false;
+        }
+        if (!autosellSettings.categories().contains(definition.categoryId())) {
+            return false;
+        }
+        return !autosellSettings.isItemDisabled(definition.id());
+    }
+
     public void trySellOnBuyerOpen(Player player, Runnable onOpen) {
         trySellBulk(player, AutosellTrigger.BUYER, onOpen);
     }
@@ -183,7 +217,7 @@ public final class AutosellService {
     }
 
     private void sellAcquiredStack(Player player, ItemStack stack, String requiredTrigger) {
-        if (!canAccess(player) || stack == null || stack.getType().isAir()) {
+        if (!canAccess(player) || ItemStacks.isAbsent(stack)) {
             return;
         }
         if (sellService.isProcessing(player.getUniqueId())) {
@@ -193,7 +227,7 @@ public final class AutosellService {
         if (!autosellSettings.enabled() || !requiredTrigger.equals(AutosellTrigger.normalize(autosellSettings.trigger()))) {
             return;
         }
-        Optional<SellableItemDefinition> definition = itemRegistry.findInPool(stack);
+        Optional<SellableItemDefinition> definition = itemRegistry.find(stack);
         if (definition.isEmpty()) {
             return;
         }
@@ -252,7 +286,7 @@ public final class AutosellService {
     }
 
     public boolean matches(PlayerAutosellSettings autosellSettings, SellableItemDefinition definition) {
-        return autosellSettings.categories().contains(definition.categoryId());
+        return isItemEnabled(autosellSettings, definition);
     }
 
     public SaleDelivery deliveryFor(PlayerAutosellSettings autosellSettings) {
@@ -268,11 +302,26 @@ public final class AutosellService {
             PlayerAutosellSettings autosellSettings,
             SellableItemDefinition definition
     ) {
-        if (!matches(autosellSettings, definition)) {
+        if (!isItemEnabled(autosellSettings, definition)) {
             return false;
         }
         double unitPrice = sellService.unitQuote(player, definition).unitPrice();
         return unitPrice + 0.001D >= autosellSettings.minUnitPrice();
+    }
+
+    private boolean canDisableItem(PlayerAutosellSettings settings, SellableItemDefinition target) {
+        if (!settings.categories().contains(target.categoryId())) {
+            return true;
+        }
+        for (SellableItemDefinition definition : itemRegistry.activeByCategory(target.categoryId())) {
+            if (definition.id().equals(target.id())) {
+                continue;
+            }
+            if (!settings.isItemDisabled(definition.id())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void save(Player player, PlayerAutosellSettings updated, Runnable onSaved) {

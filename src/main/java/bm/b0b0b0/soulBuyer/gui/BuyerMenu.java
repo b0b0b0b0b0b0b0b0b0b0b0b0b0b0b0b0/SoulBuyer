@@ -1,6 +1,8 @@
 package bm.b0b0b0.soulBuyer.gui;
 
+import bm.b0b0b0.soulBuyer.SoulBuyer;
 import bm.b0b0b0.soulBuyer.booster.BoosterService;
+import bm.b0b0b0.soulBuyer.debug.GuiItemTooltipDebugger;
 import bm.b0b0b0.soulBuyer.autosell.AutosellPayout;
 import bm.b0b0b0.soulBuyer.autosell.AutosellService;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
@@ -8,6 +10,7 @@ import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
 import bm.b0b0b0.soulBuyer.item.ItemNameResolver;
 import bm.b0b0b0.soulBuyer.item.ItemRegistry;
+import bm.b0b0b0.soulBuyer.message.MessagePairUtils;
 import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.BuyerPayoutMode;
 import bm.b0b0b0.soulBuyer.model.PlayerAutosellSettings;
@@ -24,12 +27,14 @@ import java.util.Map;
 import java.util.Set;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class BuyerMenu implements InventoryHolder {
+public final class BuyerMenu implements SoulBuyerGuiHolder {
 
     private final JavaPlugin plugin;
     private final Player player;
@@ -58,6 +63,7 @@ public final class BuyerMenu implements InventoryHolder {
     private final BuyerPayoutMode payoutMode;
     private boolean processing;
     private boolean closingIntentionally;
+    private boolean tooltipDebugDumped;
 
     public BuyerMenu(
             JavaPlugin plugin,
@@ -123,9 +129,15 @@ public final class BuyerMenu implements InventoryHolder {
                 itemRegistry,
                 itemFactory,
                 inventory,
-                config.buyerGui().elements
+                config.buyerGui().elements,
+                "CATEGORY_FILTER"
         );
-        this.categoryIconAnimator.bind(() -> categoryFilter, this::isProcessing);
+        this.categoryIconAnimator.bind(
+                categoryId -> categoryFilter.equals(categoryId),
+                categoryId -> new String[0],
+                this::isProcessing,
+                () -> player.getOpenInventory().getTopInventory().getHolder(false) instanceof BuyerMenu
+        );
         render();
         liveStatsUpdater.start();
         sellService.preloadSellLimitUsage(player);
@@ -303,7 +315,12 @@ public final class BuyerMenu implements InventoryHolder {
         fillSeparator();
         fillControls();
         fillItems();
-        categoryIconAnimator.bind(() -> categoryFilter, this::isProcessing);
+        categoryIconAnimator.bind(
+                categoryId -> categoryFilter.equals(categoryId),
+                categoryId -> new String[0],
+                this::isProcessing,
+                () -> player.getOpenInventory().getTopInventory().getHolder(false) instanceof BuyerMenu
+        );
         categoryIconAnimator.onMenuRendered();
     }
 
@@ -342,7 +359,7 @@ public final class BuyerMenu implements InventoryHolder {
         PlayerProgress progress = sellService.cachedProgress(player);
         String[] statsPairs = new String[]{
                 "points", itemNameResolver.formatMoney(progress.points()),
-                "multiplier", itemNameResolver.formatMoney(playerMultiplierDisplay())
+                "multiplier", itemNameResolver.formatMoney(sellService.displayMultiplier(player))
         };
         int pages = totalPages();
         String[] marketStatsPairs = buyerStatsService.guiPairs(player);
@@ -474,7 +491,7 @@ public final class BuyerMenu implements InventoryHolder {
                         ? AutosellPayout.PLAYER_POINTS
                         : AutosellPayout.VAULT
         );
-        String[] autosellPairs = mergePairs(
+        String[] autosellPairs = MessagePairUtils.merge(
                 new String[]{
                         "autosell_state",
                         messageService.raw(player, autosellSettings.enabled()
@@ -486,7 +503,7 @@ public final class BuyerMenu implements InventoryHolder {
                         messageService.raw(player, payoutLabelKey)
                 }
         );
-        String[] pairs = mergePairs(statsPairs, autosellPairs);
+        String[] pairs = MessagePairUtils.merge(statsPairs, autosellPairs);
         if (autosellSettings.enabled()) {
             inventory.setItem(autosellElement.slot, itemFactory.buildSelected(player, autosellElement, pairs));
         } else {
@@ -513,18 +530,8 @@ public final class BuyerMenu implements InventoryHolder {
         return "gui.buyer.autosell-payout-vault";
     }
 
-    private String[] mergePairs(String[] first, String[] second) {
-        String[] merged = new String[first.length + second.length];
-        System.arraycopy(first, 0, merged, 0, first.length);
-        System.arraycopy(second, 0, merged, first.length, second.length);
-        return merged;
-    }
-
     private double playerMultiplierDisplay() {
-        return itemRegistry.all().stream()
-                .findFirst()
-                .map(definition -> sellService.unitQuote(player, definition).playerMultiplier())
-                .orElse(1.0D);
+        return sellService.displayMultiplier(player);
     }
 
     private void fillItems() {
@@ -540,7 +547,33 @@ public final class BuyerMenu implements InventoryHolder {
             int slot = contentSlots.get(index - fromIndex);
             SellableItemDefinition definition = items.get(index);
             slotToItemId.put(slot, definition.id());
-            inventory.setItem(slot, itemRenderer.render(player, definition, sellService.unitQuote(player, definition), payoutMode));
+            ItemStack rendered = itemRenderer.render(player, definition, sellService.unitQuote(player, definition), payoutMode);
+            inventory.setItem(slot, rendered);
+            maybeDumpTooltipDebug(definition, slot, rendered);
+        }
+    }
+
+    private void maybeDumpTooltipDebug(SellableItemDefinition definition, int slot, ItemStack rendered) {
+        if (tooltipDebugDumped || !(plugin instanceof SoulBuyer soulBuyer)) {
+            return;
+        }
+        if (!player.hasPermission(config.permissionAdmin())) {
+            return;
+        }
+        if (!definition.material().contains("SMITHING_TEMPLATE")) {
+            return;
+        }
+        tooltipDebugDumped = true;
+        Material sourceMaterial = Material.valueOf(definition.material());
+        ItemStack rawStack = ItemStack.of(sourceMaterial, rendered.getAmount());
+        ItemStack slotStack = inventory.getItem(slot);
+        soulBuyer.tooltipDebugHeader(player, plugin.getPluginMeta().getVersion(), config);
+        soulBuyer.debug().tooltipDebug("auto-dump on /buyer open itemId=" + definition.id()
+                + " slot=" + slot
+                + " hideVanillaItemTooltip=" + config.buyerGui().hideVanillaItemTooltip);
+        GuiItemTooltipDebugger.dumpComparison(soulBuyer.debug(), player, sourceMaterial, rendered, rawStack);
+        if (slotStack != null) {
+            GuiItemTooltipDebugger.dump(soulBuyer.debug(), player, "MENU-SLOT-AFTER-SET", slotStack);
         }
     }
 

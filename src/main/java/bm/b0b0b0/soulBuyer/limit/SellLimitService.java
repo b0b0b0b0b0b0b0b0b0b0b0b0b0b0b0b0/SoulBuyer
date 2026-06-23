@@ -79,6 +79,7 @@ public final class SellLimitService {
         if (!enabled()) {
             return true;
         }
+        boolean hasMatching = false;
         for (ItemStack stack : player.getInventory().getStorageContents()) {
             if (ItemStacks.isAbsent(stack)) {
                 continue;
@@ -91,11 +92,12 @@ public final class SellLimitService {
             if (!filter.test(definition)) {
                 continue;
             }
+            hasMatching = true;
             if (remaining(player, usage, definition.id()) > 0) {
                 return true;
             }
         }
-        return false;
+        return !hasMatching;
     }
 
     public SellLimitSplit split(Player player, List<ItemStack> stacks, PlayerSellLimitUsage usage) {

@@ -262,6 +262,9 @@ public final class BuyerMenu implements SoulBuyerGuiHolder {
     }
 
     private void sellItem(String itemId) {
+        if (InventorySellHelper.countMatching(player, itemRegistry, itemId) <= 0) {
+            return;
+        }
         processing = true;
         sellService.sellItemFromInventory(player, itemId, payoutMode, () -> Bukkit.getScheduler().runTask(plugin, () -> {
             processing = false;

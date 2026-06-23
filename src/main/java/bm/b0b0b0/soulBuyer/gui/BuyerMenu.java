@@ -560,6 +560,9 @@ public final class BuyerMenu implements SoulBuyerGuiHolder {
         if (tooltipDebugDumped || !(plugin instanceof SoulBuyer soulBuyer)) {
             return;
         }
+        if (!config.debugTooltip()) {
+            return;
+        }
         if (!player.hasPermission(config.permissionAdmin())) {
             return;
         }

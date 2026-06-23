@@ -91,8 +91,9 @@ public final class SoulBuyer extends JavaPlugin {
                 + " bukkit=" + Bukkit.getBukkitVersion()
                 + " player=" + player.getName()
                 + " hideVanillaItemTooltip=" + pluginConfig.buyerGui().hideVanillaItemTooltip
-                + " tooltipBuild=paper-model-v2"
-                + " debugConfig=" + pluginConfig.debug());
+                + " tooltipBuild=armor-trim-v2"
+                + " debug=" + pluginConfig.debug()
+                + " debugTooltip=" + pluginConfig.debugTooltip());
     }
 
     @Override
@@ -119,12 +120,14 @@ public final class SoulBuyer extends JavaPlugin {
             configurationLoader = new ConfigurationLoader();
             PluginConfig pluginConfig = configurationLoader.load(this, debugLog);
             debugLog.setEnabled(pluginConfig.debug());
+            debugLog.setTooltipDebugEnabled(pluginConfig.debugTooltip());
             startupLog.stepOk("Конфиг — storage=" + pluginConfig.storageType()
                     + ", предметов=" + pluginConfig.items().size()
                     + ", debug=" + pluginConfig.debug());
             debugLog.boot("config OK | storage=" + pluginConfig.storageType()
                     + " | items=" + pluginConfig.items().size()
-                    + " | debug=" + pluginConfig.debug());
+                    + " | debug=" + pluginConfig.debug()
+                    + " | debugTooltip=" + pluginConfig.debugTooltip());
 
             messageLoader = new MessageLoader(
                     this,

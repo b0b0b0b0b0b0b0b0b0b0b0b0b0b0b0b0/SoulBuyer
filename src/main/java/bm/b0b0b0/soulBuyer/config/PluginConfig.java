@@ -262,4 +262,8 @@ public final class PluginConfig {
     public boolean debug() {
         return main.debug;
     }
+
+    public boolean debugTooltip() {
+        return main.debugTooltip;
+    }
 }

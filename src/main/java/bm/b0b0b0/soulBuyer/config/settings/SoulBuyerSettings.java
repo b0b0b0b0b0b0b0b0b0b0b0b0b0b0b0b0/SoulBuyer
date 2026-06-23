@@ -18,6 +18,9 @@ public final class SoulBuyerSettings extends YamlSerializable {
     @Comment(@CommentValue("Подробные логи в консоль: bootstrap, команды, продажи, storage. На проде — false."))
     public boolean debug = false;
 
+    @Comment(@CommentValue("TOOLTIP-DEBUG: дамп иконок GUI в консоль (/soulbuyer admin debug-tooltip, автодамп smithing в /buyer). На проде — false."))
+    public boolean debugTooltip = false;
+
     @NewLine
     @Comment({
             @CommentValue("=== РЕЖИМ ХРАНЕНИЯ ДАННЫХ ==="),

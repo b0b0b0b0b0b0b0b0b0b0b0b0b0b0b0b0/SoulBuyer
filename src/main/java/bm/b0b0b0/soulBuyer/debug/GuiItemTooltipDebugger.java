@@ -1,14 +1,11 @@
 package bm.b0b0b0.soulBuyer.debug;
 
-import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.inventory.tooltip.TooltipContext;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
@@ -33,12 +30,9 @@ public final class GuiItemTooltipDebugger {
             return lines;
         }
         lines.add("bukkitType=" + itemStack.getType());
-        if (itemStack.getType() == Material.PAPER) {
-            lines.add("tooltipBuildTag=" + readTooltipBuildTag(itemStack));
-        }
+        lines.add("tooltipBuildTag=" + readTooltipBuildTag(itemStack));
         lines.add("amount=" + itemStack.getAmount());
         lines.add("dataTypesCount=" + itemStack.getDataTypes().size());
-        lines.add("dataTypes=" + formatDataTypes(itemStack));
         lines.add("hasItemMeta=" + itemStack.hasItemMeta());
         if (itemStack.hasData(DataComponentTypes.ITEM_MODEL)) {
             lines.add("itemModel=" + itemStack.getData(DataComponentTypes.ITEM_MODEL));
@@ -64,11 +58,6 @@ public final class GuiItemTooltipDebugger {
             if (meta.hasItemModel()) {
                 lines.add("meta.itemModel=" + meta.getItemModel());
             }
-            try {
-                lines.add("meta.componentString=" + meta.getAsComponentString());
-            } catch (Exception exception) {
-                lines.add("meta.componentString=ERROR " + exception.getMessage());
-            }
         }
         appendTooltipLines(lines, "tooltip", itemStack, TooltipContext.create(), player);
         appendTooltipLines(lines, "tooltipAdvanced", itemStack, TooltipContext.create().asAdvanced(), player);
@@ -77,6 +66,9 @@ public final class GuiItemTooltipDebugger {
     }
 
     public static void dump(SoulBuyerDebugLog debug, Player player, String label, ItemStack itemStack) {
+        if (!debug.tooltipDebugEnabled()) {
+            return;
+        }
         for (String line : analyze(itemStack, player, label)) {
             debug.tooltipDebug(line);
         }
@@ -89,6 +81,9 @@ public final class GuiItemTooltipDebugger {
             ItemStack hiddenStack,
             ItemStack rawStack
     ) {
+        if (!debug.tooltipDebugEnabled()) {
+            return;
+        }
         debug.tooltipDebug("----- TOOLTIP DEBUG COMPARISON sourceMaterial=" + sourceMaterial
                 + " hideVanillaPath=" + (hiddenStack != null)
                 + " player=" + player.getName() + " -----");
@@ -113,17 +108,6 @@ public final class GuiItemTooltipDebugger {
         for (int index = 0; index < tooltipLines.size(); index++) {
             lines.add(prefix + "[" + index + "]=" + PLAIN.serialize(tooltipLines.get(index)));
         }
-    }
-
-    private static String formatDataTypes(ItemStack itemStack) {
-        return itemStack.getDataTypes().stream()
-                .sorted(Comparator.comparing(type -> type.toString()))
-                .map(GuiItemTooltipDebugger::formatDataType)
-                .collect(Collectors.joining(", "));
-    }
-
-    private static String formatDataType(DataComponentType type) {
-        return type.toString();
     }
 
     private static String readTooltipBuildTag(ItemStack itemStack) {

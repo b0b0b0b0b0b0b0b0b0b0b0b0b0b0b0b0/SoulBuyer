@@ -7,6 +7,7 @@ public final class SoulBuyerDebugLog {
 
     private final JavaPlugin plugin;
     private volatile boolean enabled = false;
+    private volatile boolean tooltipDebugEnabled = false;
 
     public SoulBuyerDebugLog(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -16,8 +17,16 @@ public final class SoulBuyerDebugLog {
         this.enabled = enabled;
     }
 
+    public void setTooltipDebugEnabled(boolean tooltipDebugEnabled) {
+        this.tooltipDebugEnabled = tooltipDebugEnabled;
+    }
+
     public boolean enabled() {
         return enabled;
+    }
+
+    public boolean tooltipDebugEnabled() {
+        return tooltipDebugEnabled;
     }
 
     public void boot(String message) {
@@ -53,6 +62,9 @@ public final class SoulBuyerDebugLog {
     }
 
     public void tooltipDebug(String message) {
+        if (!tooltipDebugEnabled) {
+            return;
+        }
         plugin.getLogger().info("[SoulBuyer|TOOLTIP-DEBUG] " + message + threadSuffix());
     }
 

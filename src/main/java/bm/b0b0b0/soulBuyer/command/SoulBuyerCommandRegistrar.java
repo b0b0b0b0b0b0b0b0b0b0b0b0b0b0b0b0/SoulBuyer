@@ -142,10 +142,13 @@ public final class SoulBuyerCommandRegistrar {
             return 0;
         }
         BuyerGuiService guiService = runtime.buyerGuiService();
+        PluginConfig pluginConfig = guiService.config();
+        if (!requireDebugTooltip(sender, pluginConfig)) {
+            return 0;
+        }
         ItemRegistry itemRegistry = runtime.itemRegistry();
         BuyerMenuItemRenderer itemRenderer = guiService.itemRenderer();
         SellService sellService = guiService.sellService();
-        PluginConfig pluginConfig = guiService.config();
         SellableItemDefinition definition = resolveDebugDefinition(itemRegistry, itemId);
         if (definition == null) {
             sender.sendMessage(Component.text("[SoulBuyer] item not found: " + (itemId == null ? "netherite_upgrade" : itemId)));
@@ -161,8 +164,8 @@ public final class SoulBuyerCommandRegistrar {
         sender.sendMessage(Component.text("[SoulBuyer] tooltip debug dumped to console for item "
                 + definition.id() + " (material=" + definition.material() + "). Hidden-path item added to inventory."));
         sender.sendMessage(Component.text("[SoulBuyer] hideVanillaItemTooltip="
-                + pluginConfig.buyerGui().hideVanillaItemTooltip + " debug="
-                + pluginConfig.debug()));
+                + pluginConfig.buyerGui().hideVanillaItemTooltip + " debugTooltip="
+                + pluginConfig.debugTooltip()));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -170,6 +173,9 @@ public final class SoulBuyerCommandRegistrar {
         CommandSender sender = context.getSource().getSender();
         if (!(sender instanceof Player player)) {
             send(sender, "command.player-only");
+            return 0;
+        }
+        if (!requireDebugTooltip(sender, config)) {
             return 0;
         }
         ItemStack hand = player.getInventory().getItemInMainHand();
@@ -183,6 +189,9 @@ public final class SoulBuyerCommandRegistrar {
         CommandSender sender = context.getSource().getSender();
         if (!(sender instanceof Player player)) {
             send(sender, "command.player-only");
+            return 0;
+        }
+        if (!requireDebugTooltip(sender, config)) {
             return 0;
         }
         Inventory top = player.getOpenInventory().getTopInventory();
@@ -239,6 +248,7 @@ public final class SoulBuyerCommandRegistrar {
                         runtime.catalogRotationService().reload(reloaded);
                     }
                     plugin.debug().setEnabled(reloaded.debug());
+                    plugin.debug().setTooltipDebugEnabled(reloaded.debugTooltip());
                     plugin.debug().log("admin reload OK");
                     send(sender, "command.reload-success");
                 });
@@ -256,6 +266,16 @@ public final class SoulBuyerCommandRegistrar {
         }
         plugin.debug().warn("command blocked: runtime not ready for " + sender.getName());
         send(sender, "error.database");
+        return false;
+    }
+
+    private boolean requireDebugTooltip(CommandSender sender, PluginConfig pluginConfig) {
+        if (pluginConfig.debugTooltip()) {
+            return true;
+        }
+        sender.sendMessage(Component.text(
+                "[SoulBuyer] debug-tooltip выключен. В config.yml: debug-tooltip: true, затем /soulbuyer admin reload"
+        ));
         return false;
     }
 

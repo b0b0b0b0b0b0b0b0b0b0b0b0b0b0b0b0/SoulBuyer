@@ -7,18 +7,18 @@ import io.papermc.paper.datacomponent.item.CustomModelData;
 import io.papermc.paper.datacomponent.item.ItemArmorTrim;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.persistence.PersistentDataContainerView;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.Recipe;
@@ -154,8 +154,9 @@ final class GuiVanillaTooltipHider {
     }
 
     private static TrimMaterial resolvePreviewTrimMaterial() {
+        var registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_MATERIAL);
         for (String materialKey : PREVIEW_TRIM_MATERIALS) {
-            TrimMaterial material = Registry.TRIM_MATERIAL.get(NamespacedKey.minecraft(materialKey));
+            TrimMaterial material = registry.get(NamespacedKey.minecraft(materialKey));
             if (material != null) {
                 return material;
             }
@@ -229,12 +230,9 @@ final class GuiVanillaTooltipHider {
         if (patternKey == null || patternKey.isBlank()) {
             return null;
         }
-        NamespacedKey key = NamespacedKey.minecraft(patternKey);
-        TrimPattern pattern = Registry.TRIM_PATTERN.get(key);
-        if (pattern != null) {
-            return pattern;
-        }
-        return Bukkit.getRegistry(TrimPattern.class).get(key);
+        return RegistryAccess.registryAccess()
+                .getRegistry(RegistryKey.TRIM_PATTERN)
+                .get(NamespacedKey.minecraft(patternKey));
     }
 
     private static TrimPattern resolveTrimPatternFromRecipes(Material material) {

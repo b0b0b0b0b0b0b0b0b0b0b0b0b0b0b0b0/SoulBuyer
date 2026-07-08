@@ -2,6 +2,7 @@ package bm.b0b0b0.soulBuyer.gui;
 
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.message.MessageService;
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,12 +45,7 @@ public final class GuiItemFactory {
     }
 
     public void applyCustomModelData(ItemStack itemStack, int customModelData) {
-        if (itemStack == null || customModelData < 0) {
-            return;
-        }
-        ItemMeta meta = itemStack.getItemMeta();
-        meta.setCustomModelData(customModelData);
-        itemStack.setItemMeta(meta);
+        ItemStacks.applyCustomModelData(itemStack, customModelData);
     }
 
     public ItemStack buildMaterial(

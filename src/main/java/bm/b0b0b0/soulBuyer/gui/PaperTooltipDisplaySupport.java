@@ -13,9 +13,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 final class PaperTooltipDisplaySupport {
 
-    private static final DataComponentType.Valued<TooltipDisplay> TOOLTIP_DISPLAY = resolveTooltipDisplayType();
-    private static final Set<DataComponentType> HIDDEN_TOOLTIP_COMPONENTS = buildHiddenTooltipComponents(TOOLTIP_DISPLAY);
-
     private static final Set<DataComponentType> VISIBLE_TOOLTIP_COMPONENTS = Set.of(
             DataComponentTypes.LORE,
             DataComponentTypes.CUSTOM_NAME,
@@ -23,6 +20,9 @@ final class PaperTooltipDisplaySupport {
             DataComponentTypes.CUSTOM_MODEL_DATA,
             DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE
     );
+
+    private static final DataComponentType.Valued<TooltipDisplay> TOOLTIP_DISPLAY = resolveTooltipDisplayType();
+    private static final Set<DataComponentType> HIDDEN_TOOLTIP_COMPONENTS = buildHiddenTooltipComponents(TOOLTIP_DISPLAY);
 
     private PaperTooltipDisplaySupport() {
     }

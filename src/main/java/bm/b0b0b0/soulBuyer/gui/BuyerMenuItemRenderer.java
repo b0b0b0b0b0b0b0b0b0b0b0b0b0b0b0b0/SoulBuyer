@@ -6,6 +6,7 @@ import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.BuyerPayoutMode;
 import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
+import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.ArrayList;
@@ -139,7 +140,7 @@ public final class BuyerMenuItemRenderer {
             meta.lore(lore);
             meta.getPersistentDataContainer().set(itemIdKey, PersistentDataType.STRING, definition.id());
             if (customModelData != null) {
-                meta.setCustomModelData(customModelData);
+                ItemStacks.applyCustomModelData(itemStack, customModelData);
             }
             itemStack.setItemMeta(meta);
         }

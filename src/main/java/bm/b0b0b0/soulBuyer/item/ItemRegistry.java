@@ -10,13 +10,11 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 public final class ItemRegistry {
 
@@ -158,8 +156,6 @@ public final class ItemRegistry {
         if (!definition.usesCustomModelData()) {
             return true;
         }
-        ItemMeta meta = itemStack.getItemMeta();
-        return meta != null && meta.hasCustomModelData()
-                && definition.customModelData() == meta.getCustomModelData();
+        return ItemStacks.matchesCustomModelData(itemStack, definition.customModelData());
     }
 }

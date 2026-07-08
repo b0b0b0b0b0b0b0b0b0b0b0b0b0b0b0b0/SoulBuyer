@@ -1,5 +1,6 @@
 package bm.b0b0b0.soulBuyer.debug;
 
+import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.inventory.tooltip.TooltipContext;
@@ -43,10 +44,13 @@ public final class GuiItemTooltipDebugger {
         if (itemStack.hasData(DataComponentTypes.CUSTOM_NAME)) {
             lines.add("customName=" + PLAIN.serialize(itemStack.getData(DataComponentTypes.CUSTOM_NAME)));
         }
-        if (itemStack.hasData(DataComponentTypes.TOOLTIP_DISPLAY)) {
-            TooltipDisplay display = itemStack.getData(DataComponentTypes.TOOLTIP_DISPLAY);
-            lines.add("tooltipDisplay.hideTooltip=" + display.hideTooltip());
-            lines.add("tooltipDisplay.hiddenCount=" + display.hiddenComponents().size());
+        DataComponentType.Valued<TooltipDisplay> tooltipDisplay = resolveTooltipDisplayType();
+        if (tooltipDisplay != null && itemStack.hasData(tooltipDisplay)) {
+            TooltipDisplay display = itemStack.getData(tooltipDisplay);
+            if (display != null) {
+                lines.add("tooltipDisplay.hideTooltip=" + display.hideTooltip());
+                lines.add("tooltipDisplay.hiddenCount=" + display.hiddenComponents().size());
+            }
         }
         if (itemStack.hasItemMeta()) {
             ItemMeta meta = itemStack.getItemMeta();
@@ -118,5 +122,18 @@ public final class GuiItemTooltipDebugger {
             }
         }
         return "missing";
+    }
+
+    @SuppressWarnings("unchecked")
+    private static DataComponentType.Valued<TooltipDisplay> resolveTooltipDisplayType() {
+        try {
+            java.lang.reflect.Field field = DataComponentTypes.class.getField("TOOLTIP_DISPLAY");
+            Object value = field.get(null);
+            if (value instanceof DataComponentType.Valued<?> valued) {
+                return (DataComponentType.Valued<TooltipDisplay>) valued;
+            }
+        } catch (ReflectiveOperationException | NoSuchFieldError ignored) {
+        }
+        return null;
     }
 }

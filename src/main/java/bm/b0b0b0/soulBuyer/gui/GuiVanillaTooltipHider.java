@@ -6,10 +6,8 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.CustomModelData;
 import io.papermc.paper.datacomponent.item.ItemArmorTrim;
 import io.papermc.paper.datacomponent.item.ItemLore;
-import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.persistence.PersistentDataContainerView;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -42,16 +40,6 @@ final class GuiVanillaTooltipHider {
     private static final String[] PREVIEW_TRIM_MATERIALS = {
             "gold", "quartz", "copper", "amethyst", "diamond", "iron", "emerald", "lapis"
     };
-
-    private static final Set<DataComponentType> VISIBLE_TOOLTIP_COMPONENTS = Set.of(
-            DataComponentTypes.LORE,
-            DataComponentTypes.CUSTOM_NAME,
-            DataComponentTypes.MAX_STACK_SIZE,
-            DataComponentTypes.CUSTOM_MODEL_DATA,
-            DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE
-    );
-
-    private static final Set<DataComponentType> HIDDEN_TOOLTIP_COMPONENTS = buildHiddenTooltipComponents();
 
     private GuiVanillaTooltipHider() {
     }
@@ -202,12 +190,7 @@ final class GuiVanillaTooltipHider {
                 container.set(new NamespacedKey(itemIdKey.getNamespace(), "tooltip-build"), PersistentDataType.STRING, BUILD_TAG);
             });
         }
-        itemStack.setData(
-                DataComponentTypes.TOOLTIP_DISPLAY,
-                TooltipDisplay.tooltipDisplay()
-                        .hideTooltip(false)
-                        .hiddenComponents(HIDDEN_TOOLTIP_COMPONENTS)
-        );
+        PaperTooltipDisplaySupport.apply(itemStack);
     }
 
     private static boolean isBlank(String value) {
@@ -308,31 +291,6 @@ final class GuiVanillaTooltipHider {
                 DataComponentTypes.ITEM_MODEL,
                 Key.key(visualMaterial.getKey().getNamespace(), visualMaterial.getKey().getKey())
         );
-    }
-
-    private static Set<DataComponentType> buildHiddenTooltipComponents() {
-        Set<DataComponentType> hidden = new HashSet<>();
-        for (Field field : DataComponentTypes.class.getFields()) {
-            if (!Modifier.isStatic(field.getModifiers())) {
-                continue;
-            }
-            try {
-                Object value = field.get(null);
-                if (value instanceof DataComponentType type
-                        && !VISIBLE_TOOLTIP_COMPONENTS.contains(type)
-                        && type != DataComponentTypes.TOOLTIP_DISPLAY) {
-                    hidden.add(type);
-                }
-            } catch (IllegalAccessException ignored) {
-            }
-        }
-        hidden.add(DataComponentTypes.ITEM_NAME);
-        hidden.add(DataComponentTypes.ATTRIBUTE_MODIFIERS);
-        hidden.add(DataComponentTypes.PROVIDES_TRIM_MATERIAL);
-        hidden.add(DataComponentTypes.ITEM_MODEL);
-        hidden.add(DataComponentTypes.RARITY);
-        hidden.removeAll(VISIBLE_TOOLTIP_COMPONENTS);
-        return Set.copyOf(hidden);
     }
 
     static String readPersistentString(ItemStack itemStack, NamespacedKey key) {

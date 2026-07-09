@@ -1,29 +1,12 @@
 package bm.b0b0b0.soulBuyer.gui;
 
 import bm.b0b0b0.soulBuyer.util.MaterialParser;
-import io.papermc.paper.datacomponent.DataComponentType;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.CustomModelData;
-import io.papermc.paper.datacomponent.item.ItemArmorTrim;
-import io.papermc.paper.datacomponent.item.ItemLore;
-import io.papermc.paper.persistence.PersistentDataContainerView;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ItemType;
-import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.RecipeChoice;
-import org.bukkit.inventory.SmithingTrimRecipe;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
@@ -82,9 +65,7 @@ final class GuiVanillaTooltipHider {
             modelMaterial = Material.PAPER;
         }
 
-        ItemStack itemStack = ItemStack.of(Material.PAPER, clampedAmount);
-        clearDefaultComponents(itemStack);
-        applyVisualModel(itemStack, modelMaterial);
+        ItemStack itemStack = ItemStack.of(modelMaterial, clampedAmount);
         applyDisplayData(itemStack, name, lore, customModelData, itemIdKey, itemId);
         return itemStack;
     }
@@ -99,7 +80,6 @@ final class GuiVanillaTooltipHider {
             String itemId
     ) {
         ItemStack itemStack = ItemStack.of(ARMOR_TRIM_ICON, amount);
-        stripVanillaTooltipNoise(itemStack);
         applyTrimPattern(itemStack, trimPattern);
         applyDisplayData(itemStack, name, lore, customModelData, itemIdKey, itemId);
         return itemStack;
@@ -115,7 +95,6 @@ final class GuiVanillaTooltipHider {
             String itemId
     ) {
         ItemStack itemStack = ItemStack.of(material, amount);
-        stripVanillaTooltipNoise(itemStack);
         applyDisplayData(itemStack, name, lore, customModelData, itemIdKey, itemId);
         return itemStack;
     }
@@ -133,19 +112,12 @@ final class GuiVanillaTooltipHider {
         return Material.STONE;
     }
 
-    private static void stripVanillaTooltipNoise(ItemStack itemStack) {
-        itemStack.unsetData(DataComponentTypes.ITEM_NAME);
-        itemStack.unsetData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
-        itemStack.unsetData(DataComponentTypes.PROVIDES_TRIM_MATERIAL);
-    }
-
     private static void applyTrimPattern(ItemStack itemStack, TrimPattern trimPattern) {
         TrimMaterial trimMaterial = resolvePreviewTrimMaterial();
         if (trimMaterial == null || trimPattern == null) {
             return;
         }
         ArmorTrim trim = new ArmorTrim(trimMaterial, trimPattern);
-        itemStack.setData(DataComponentTypes.TRIM, ItemArmorTrim.itemArmorTrim(trim));
         ItemMeta meta = itemStack.getItemMeta();
         if (meta instanceof ArmorMeta armorMeta) {
             armorMeta.setTrim(trim);
@@ -154,14 +126,27 @@ final class GuiVanillaTooltipHider {
     }
 
     private static TrimMaterial resolvePreviewTrimMaterial() {
-        var registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_MATERIAL);
         for (String materialKey : PREVIEW_TRIM_MATERIALS) {
-            TrimMaterial material = registry.get(NamespacedKey.minecraft(materialKey));
+            TrimMaterial material = trimMaterialByKey(materialKey);
             if (material != null) {
                 return material;
             }
         }
         return null;
+    }
+
+    private static TrimMaterial trimMaterialByKey(String key) {
+        return switch (key) {
+            case "gold" -> TrimMaterial.GOLD;
+            case "quartz" -> TrimMaterial.QUARTZ;
+            case "copper" -> TrimMaterial.COPPER;
+            case "amethyst" -> TrimMaterial.AMETHYST;
+            case "diamond" -> TrimMaterial.DIAMOND;
+            case "iron" -> TrimMaterial.IRON;
+            case "emerald" -> TrimMaterial.EMERALD;
+            case "lapis" -> TrimMaterial.LAPIS;
+            default -> null;
+        };
     }
 
     private static void applyDisplayData(
@@ -172,25 +157,22 @@ final class GuiVanillaTooltipHider {
             NamespacedKey itemIdKey,
             String itemId
     ) {
-        itemStack.unsetData(DataComponentTypes.ITEM_NAME);
-        itemStack.setData(DataComponentTypes.CUSTOM_NAME, name);
-        if (!lore.isEmpty()) {
-            itemStack.setData(DataComponentTypes.LORE, ItemLore.lore(lore));
-        } else {
-            itemStack.unsetData(DataComponentTypes.LORE);
-        }
+        ItemMeta meta = itemStack.getItemMeta();
+        meta.itemName(Component.empty());
+        meta.displayName(name);
+        meta.lore(lore);
         if (customModelData != null && customModelData >= 0) {
-            itemStack.setData(
-                    DataComponentTypes.CUSTOM_MODEL_DATA,
-                    CustomModelData.customModelData().addFloat(customModelData.floatValue())
-            );
+            meta.setCustomModelData(customModelData);
         }
         if (itemIdKey != null && itemId != null) {
-            itemStack.editPersistentDataContainer(container -> {
-                container.set(itemIdKey, PersistentDataType.STRING, itemId);
-                container.set(new NamespacedKey(itemIdKey.getNamespace(), "tooltip-build"), PersistentDataType.STRING, BUILD_TAG);
-            });
+            meta.getPersistentDataContainer().set(itemIdKey, PersistentDataType.STRING, itemId);
+            meta.getPersistentDataContainer().set(
+                    new NamespacedKey(itemIdKey.getNamespace(), "tooltip-build"),
+                    PersistentDataType.STRING,
+                    BUILD_TAG
+            );
         }
+        itemStack.setItemMeta(meta);
         PaperTooltipDisplaySupport.apply(itemStack);
     }
 
@@ -210,11 +192,7 @@ final class GuiVanillaTooltipHider {
         if (material == null) {
             return null;
         }
-        TrimPattern fromKey = lookupTrimPattern(extractTrimPatternKey(material));
-        if (fromKey != null) {
-            return fromKey;
-        }
-        return resolveTrimPatternFromRecipes(material);
+        return lookupTrimPattern(extractTrimPatternKey(material));
     }
 
     private static String extractTrimPatternKey(Material material) {
@@ -230,75 +208,40 @@ final class GuiVanillaTooltipHider {
         if (patternKey == null || patternKey.isBlank()) {
             return null;
         }
-        return RegistryAccess.registryAccess()
-                .getRegistry(RegistryKey.TRIM_PATTERN)
-                .get(NamespacedKey.minecraft(patternKey));
+        return trimPatternByKey(patternKey);
     }
 
-    private static TrimPattern resolveTrimPatternFromRecipes(Material material) {
-        ItemStack templateStack = ItemStack.of(material, 1);
-        Iterator<Recipe> iterator = Bukkit.recipeIterator();
-        while (iterator.hasNext()) {
-            Recipe recipe = iterator.next();
-            if (!(recipe instanceof SmithingTrimRecipe trimRecipe)) {
-                continue;
-            }
-            if (matchesTemplateChoice(trimRecipe.getTemplate(), templateStack)) {
-                return trimRecipe.getTrimPattern();
-            }
-        }
-        return null;
-    }
-
-    private static boolean matchesTemplateChoice(RecipeChoice choice, ItemStack templateStack) {
-        if (choice == null || templateStack == null) {
-            return false;
-        }
-        if (choice instanceof RecipeChoice.MaterialChoice materialChoice) {
-            return materialChoice.getChoices().contains(templateStack.getType());
-        }
-        if (choice instanceof RecipeChoice.ExactChoice exactChoice) {
-            for (ItemStack candidate : exactChoice.getChoices()) {
-                if (candidate != null && candidate.getType() == templateStack.getType()) {
-                    return true;
-                }
-            }
-        }
-        return choice.test(templateStack);
-    }
-
-    private static void clearDefaultComponents(ItemStack itemStack) {
-        Set<DataComponentType> present = new HashSet<>(itemStack.getDataTypes());
-        for (DataComponentType type : present) {
-            if (type != DataComponentTypes.MAX_STACK_SIZE) {
-                itemStack.unsetData(type);
-            }
-        }
-    }
-
-    private static void applyVisualModel(ItemStack itemStack, Material visualMaterial) {
-        if (visualMaterial == null || !visualMaterial.isItem()) {
-            return;
-        }
-        ItemType itemType = visualMaterial.asItemType();
-        if (itemType != null && itemType.hasDefaultData(DataComponentTypes.ITEM_MODEL)) {
-            itemStack.setData(DataComponentTypes.ITEM_MODEL, itemType.getDefaultData(DataComponentTypes.ITEM_MODEL));
-            return;
-        }
-        itemStack.setData(
-                DataComponentTypes.ITEM_MODEL,
-                Key.key(visualMaterial.getKey().getNamespace(), visualMaterial.getKey().getKey())
-        );
+    private static TrimPattern trimPatternByKey(String key) {
+        return switch (key.toLowerCase(Locale.ROOT)) {
+            case "sentry" -> TrimPattern.SENTRY;
+            case "dune" -> TrimPattern.DUNE;
+            case "coast" -> TrimPattern.COAST;
+            case "wild" -> TrimPattern.WILD;
+            case "ward" -> TrimPattern.WARD;
+            case "eye" -> TrimPattern.EYE;
+            case "vex" -> TrimPattern.VEX;
+            case "tide" -> TrimPattern.TIDE;
+            case "snout" -> TrimPattern.SNOUT;
+            case "rib" -> TrimPattern.RIB;
+            case "spire" -> TrimPattern.SPIRE;
+            case "wayfinder" -> TrimPattern.WAYFINDER;
+            case "shaper" -> TrimPattern.SHAPER;
+            case "silence" -> TrimPattern.SILENCE;
+            case "raiser" -> TrimPattern.RAISER;
+            case "host" -> TrimPattern.HOST;
+            case "flow" -> TrimPattern.FLOW;
+            case "bolt" -> TrimPattern.BOLT;
+            default -> null;
+        };
     }
 
     static String readPersistentString(ItemStack itemStack, NamespacedKey key) {
-        if (itemStack == null || key == null) {
+        if (itemStack == null || key == null || !itemStack.hasItemMeta()) {
             return null;
         }
-        PersistentDataContainerView container = itemStack.getPersistentDataContainer();
-        if (!container.has(key, PersistentDataType.STRING)) {
+        if (!itemStack.getItemMeta().getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
             return null;
         }
-        return container.get(key, PersistentDataType.STRING);
+        return itemStack.getItemMeta().getPersistentDataContainer().get(key, PersistentDataType.STRING);
     }
 }

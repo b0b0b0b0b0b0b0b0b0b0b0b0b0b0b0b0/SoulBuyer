@@ -1,8 +1,5 @@
 package bm.b0b0b0.soulBuyer.debug;
 
-import io.papermc.paper.datacomponent.DataComponentType;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.inventory.tooltip.TooltipContext;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import java.util.ArrayList;
@@ -13,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -33,34 +31,22 @@ public final class GuiItemTooltipDebugger {
         lines.add("bukkitType=" + itemStack.getType());
         lines.add("tooltipBuildTag=" + readTooltipBuildTag(itemStack));
         lines.add("amount=" + itemStack.getAmount());
-        lines.add("dataTypesCount=" + itemStack.getDataTypes().size());
         lines.add("hasItemMeta=" + itemStack.hasItemMeta());
-        if (itemStack.hasData(DataComponentTypes.ITEM_MODEL)) {
-            lines.add("itemModel=" + itemStack.getData(DataComponentTypes.ITEM_MODEL));
-        }
-        if (itemStack.hasData(DataComponentTypes.TRIM)) {
-            lines.add("trim=" + itemStack.getData(DataComponentTypes.TRIM).armorTrim());
-        }
-        if (itemStack.hasData(DataComponentTypes.CUSTOM_NAME)) {
-            lines.add("customName=" + PLAIN.serialize(itemStack.getData(DataComponentTypes.CUSTOM_NAME)));
-        }
-        DataComponentType.Valued<TooltipDisplay> tooltipDisplay = resolveTooltipDisplayType();
-        if (tooltipDisplay != null && itemStack.hasData(tooltipDisplay)) {
-            TooltipDisplay display = itemStack.getData(tooltipDisplay);
-            if (display != null) {
-                lines.add("tooltipDisplay.hideTooltip=" + display.hideTooltip());
-                lines.add("tooltipDisplay.hiddenCount=" + display.hiddenComponents().size());
-            }
-        }
         if (itemStack.hasItemMeta()) {
             ItemMeta meta = itemStack.getItemMeta();
             lines.add("meta.hideTooltip=" + meta.isHideTooltip());
             lines.add("meta.hasDisplayName=" + meta.hasDisplayName());
+            if (meta.hasDisplayName()) {
+                lines.add("meta.displayName=" + PLAIN.serialize(meta.displayName()));
+            }
             lines.add("meta.hasItemName=" + meta.hasItemName());
             lines.add("meta.hasLore=" + meta.hasLore());
-            lines.add("meta.hasItemModel=" + meta.hasItemModel());
-            if (meta.hasItemModel()) {
-                lines.add("meta.itemModel=" + meta.getItemModel());
+            lines.add("meta.hasCustomModelData=" + meta.hasCustomModelData());
+            if (meta.hasCustomModelData()) {
+                lines.add("meta.customModelData=" + meta.getCustomModelData());
+            }
+            if (meta instanceof ArmorMeta armorMeta && armorMeta.hasTrim()) {
+                lines.add("meta.trim=" + armorMeta.getTrim());
             }
         }
         appendTooltipLines(lines, "tooltip", itemStack, TooltipContext.create(), player);
@@ -122,18 +108,5 @@ public final class GuiItemTooltipDebugger {
             }
         }
         return "missing";
-    }
-
-    @SuppressWarnings("unchecked")
-    private static DataComponentType.Valued<TooltipDisplay> resolveTooltipDisplayType() {
-        try {
-            java.lang.reflect.Field field = DataComponentTypes.class.getField("TOOLTIP_DISPLAY");
-            Object value = field.get(null);
-            if (value instanceof DataComponentType.Valued<?> valued) {
-                return (DataComponentType.Valued<TooltipDisplay>) valued;
-            }
-        } catch (ReflectiveOperationException | NoSuchFieldError ignored) {
-        }
-        return null;
     }
 }

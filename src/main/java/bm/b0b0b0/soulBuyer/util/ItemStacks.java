@@ -1,9 +1,7 @@
 package bm.b0b0b0.soulBuyer.util;
 
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.CustomModelData;
-import java.util.List;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 public final class ItemStacks {
 
@@ -22,17 +20,16 @@ public final class ItemStacks {
         if (isAbsent(itemStack) || customModelData < 0) {
             return;
         }
-        itemStack.setData(
-                DataComponentTypes.CUSTOM_MODEL_DATA,
-                CustomModelData.customModelData().addFloat(customModelData)
-        );
+        ItemMeta meta = itemStack.getItemMeta();
+        meta.setCustomModelData(customModelData);
+        itemStack.setItemMeta(meta);
     }
 
     public static boolean matchesCustomModelData(ItemStack itemStack, int expected) {
-        if (!itemStack.hasData(DataComponentTypes.CUSTOM_MODEL_DATA)) {
+        if (!itemStack.hasItemMeta()) {
             return false;
         }
-        List<Float> floats = itemStack.getData(DataComponentTypes.CUSTOM_MODEL_DATA).floats();
-        return !floats.isEmpty() && floats.getFirst().intValue() == expected;
+        ItemMeta meta = itemStack.getItemMeta();
+        return meta.hasCustomModelData() && meta.getCustomModelData() == expected;
     }
 }

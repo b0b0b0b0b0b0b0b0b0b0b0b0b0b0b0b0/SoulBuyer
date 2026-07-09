@@ -8,7 +8,6 @@ import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.util.ItemStacks;
 import bm.b0b0b0.soulBuyer.util.MaterialParser;
-import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
@@ -173,7 +172,6 @@ public final class BuyerMenuItemRenderer {
     }
 
     private void applySelectionGlint(ItemStack itemStack, boolean enabled) {
-        itemStack.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, enabled);
         ItemMeta meta = itemStack.getItemMeta();
         if (meta != null) {
             meta.setEnchantmentGlintOverride(enabled);

@@ -44,6 +44,7 @@ import bm.b0b0b0.soulBuyer.service.BuyerStatsService;
 import bm.b0b0b0.soulBuyer.service.SellSecureStorage;
 import bm.b0b0b0.soulBuyer.service.SellService;
 import bm.b0b0b0.soulBuyer.sync.RedisBootstrap;
+import bm.b0b0b0.soulBuyer.util.upd.SoulBuyerUpdateChecker;
 import org.bukkit.plugin.ServicePriority;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -430,6 +431,7 @@ public final class SoulBuyer extends JavaPlugin {
                             catalogRotationService.start();
                             startupLog.stepOk("Рынок — " + coefficients.size() + " позиций");
                             startupLog.bannerSuccess();
+                            SoulBuyerUpdateChecker.schedule(this, getPluginMeta().getVersion());
                             debugLog.boot("runtime ready after market load");
                         })
                 );

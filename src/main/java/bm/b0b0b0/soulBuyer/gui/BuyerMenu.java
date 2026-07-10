@@ -19,6 +19,7 @@ import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.service.BuyerStatsService;
 import bm.b0b0b0.soulBuyer.service.InventorySellHelper;
 import bm.b0b0b0.soulBuyer.service.SellService;
+import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -570,7 +571,7 @@ public final class BuyerMenu implements SoulBuyerGuiHolder {
             return;
         }
         tooltipDebugDumped = true;
-        Material sourceMaterial = Material.valueOf(definition.material());
+        Material sourceMaterial = MaterialParser.parse(definition.material());
         ItemStack rawStack = ItemStack.of(sourceMaterial, rendered.getAmount());
         ItemStack slotStack = inventory.getItem(slot);
         soulBuyer.tooltipDebugHeader(player, plugin.getPluginMeta().getVersion(), config);

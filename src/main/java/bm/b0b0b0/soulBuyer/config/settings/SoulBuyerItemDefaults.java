@@ -1,5 +1,6 @@
 package bm.b0b0b0.soulBuyer.config.settings;
 
+import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -15,7 +16,20 @@ public final class SoulBuyerItemDefaults {
         addPlants(items);
         addMobs(items);
         addMisc(items);
+        validateMaterials(items);
         return items;
+    }
+
+    private static void validateMaterials(Map<String, SoulBuyerSettings.SellableItemSettings> items) {
+        for (Map.Entry<String, SoulBuyerSettings.SellableItemSettings> entry : items.entrySet()) {
+            String materialName = entry.getValue().material;
+            if (!MaterialParser.isKnown(materialName)) {
+                throw new IllegalStateException(
+                        "Default item '" + entry.getKey() + "' uses unknown material '" + materialName
+                                + "' on this server version"
+                );
+            }
+        }
     }
 
     private static void addBlocks(Map<String, SoulBuyerSettings.SellableItemSettings> items) {

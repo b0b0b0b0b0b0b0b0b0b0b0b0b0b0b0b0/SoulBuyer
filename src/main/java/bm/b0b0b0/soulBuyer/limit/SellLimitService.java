@@ -84,7 +84,7 @@ public final class SellLimitService {
             if (ItemStacks.isAbsent(stack)) {
                 continue;
             }
-            Optional<SellableItemDefinition> definitionOptional = itemRegistry.findInPool(stack);
+            Optional<SellableItemDefinition> definitionOptional = itemRegistry.find(stack);
             if (definitionOptional.isEmpty()) {
                 continue;
             }
@@ -104,13 +104,22 @@ public final class SellLimitService {
         if (!enabled()) {
             return new SellLimitSplit(stacks, List.of());
         }
+        List<ItemStack> eligible = new ArrayList<>();
+        List<ItemStack> skipped = new ArrayList<>();
+        for (ItemStack stack : stacks) {
+            if (itemRegistry.find(stack).isPresent()) {
+                eligible.add(stack);
+            } else {
+                skipped.add(stack.clone());
+            }
+        }
         InventorySellHelper.GroupedStacks grouped = InventorySellHelper.groupStacks(
                 itemRegistry,
-                stacks,
+                eligible,
                 InventorySellHelper.CatalogScope.ACTIVE
         );
         List<ItemStack> sell = new ArrayList<>();
-        List<ItemStack> returned = new ArrayList<>();
+        List<ItemStack> returned = new ArrayList<>(skipped);
         for (Map.Entry<String, Integer> entry : grouped.amounts().entrySet()) {
             int allowed = remaining(player, usage, entry.getKey());
             int total = entry.getValue();

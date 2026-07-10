@@ -28,6 +28,7 @@ public final class InventorySellHelper {
     }
 
     private static final Predicate<SellableItemDefinition> ANY = definition -> true;
+    private static final CatalogScope SELL_SCOPE = CatalogScope.ACTIVE;
 
     private InventorySellHelper() {
     }
@@ -35,7 +36,7 @@ public final class InventorySellHelper {
     public static int countMatching(Player player, ItemRegistry itemRegistry, String itemId) {
         int total = 0;
         for (ItemStack stack : player.getInventory().getStorageContents()) {
-            if (matches(stack, itemRegistry, definition -> definition.id().equals(itemId))) {
+            if (matches(stack, itemRegistry, SELL_SCOPE, definition -> definition.id().equals(itemId))) {
                 total += stack.getAmount();
             }
         }
@@ -56,7 +57,7 @@ public final class InventorySellHelper {
         ItemStack[] contents = player.getInventory().getStorageContents();
         for (int index = 0; index < contents.length && remaining > 0; index++) {
             ItemStack stack = contents[index];
-            if (!matches(stack, itemRegistry, definition -> definition.id().equals(itemId))) {
+            if (!matches(stack, itemRegistry, SELL_SCOPE, definition -> definition.id().equals(itemId))) {
                 continue;
             }
             int take = Math.min(remaining, stack.getAmount());
@@ -80,7 +81,7 @@ public final class InventorySellHelper {
             Predicate<SellableItemDefinition> filter
     ) {
         ItemStack[] contents = player.getInventory().getStorageContents();
-        List<ItemStack> collected = collectAndClearSlots(contents, itemRegistry, filter);
+        List<ItemStack> collected = collectAndClearSlots(contents, itemRegistry, SELL_SCOPE, filter);
         player.getInventory().setStorageContents(contents);
         return collected;
     }
@@ -96,7 +97,7 @@ public final class InventorySellHelper {
         List<ItemStack> collected = new ArrayList<>();
         for (int index = 0; index < inventory.getSize(); index++) {
             ItemStack stack = inventory.getItem(index);
-            if (collectMatch(collected, stack, itemRegistry, filter)) {
+            if (collectMatch(collected, stack, itemRegistry, SELL_SCOPE, filter)) {
                 inventory.setItem(index, null);
             }
         }
@@ -109,7 +110,7 @@ public final class InventorySellHelper {
             return collected;
         }
         for (ItemStack stack : stacks) {
-            if (matches(stack, itemRegistry, ANY)) {
+            if (matches(stack, itemRegistry, SELL_SCOPE, ANY)) {
                 collected.add(stack.clone());
             }
         }
@@ -143,11 +144,12 @@ public final class InventorySellHelper {
     private static List<ItemStack> collectAndClearSlots(
             ItemStack[] contents,
             ItemRegistry itemRegistry,
+            CatalogScope scope,
             Predicate<SellableItemDefinition> filter
     ) {
         List<ItemStack> collected = new ArrayList<>();
         for (int index = 0; index < contents.length; index++) {
-            if (collectMatch(collected, contents[index], itemRegistry, filter)) {
+            if (collectMatch(collected, contents[index], itemRegistry, scope, filter)) {
                 contents[index] = null;
             }
         }
@@ -158,9 +160,10 @@ public final class InventorySellHelper {
             List<ItemStack> collected,
             ItemStack stack,
             ItemRegistry itemRegistry,
+            CatalogScope scope,
             Predicate<SellableItemDefinition> filter
     ) {
-        if (!matches(stack, itemRegistry, filter)) {
+        if (!matches(stack, itemRegistry, scope, filter)) {
             return false;
         }
         collected.add(stack.clone());
@@ -170,9 +173,10 @@ public final class InventorySellHelper {
     private static boolean matches(
             ItemStack stack,
             ItemRegistry itemRegistry,
+            CatalogScope scope,
             Predicate<SellableItemDefinition> filter
     ) {
-        return definition(stack, itemRegistry, CatalogScope.POOL, filter).isPresent();
+        return definition(stack, itemRegistry, scope, filter).isPresent();
     }
 
     private static Optional<SellableItemDefinition> definition(

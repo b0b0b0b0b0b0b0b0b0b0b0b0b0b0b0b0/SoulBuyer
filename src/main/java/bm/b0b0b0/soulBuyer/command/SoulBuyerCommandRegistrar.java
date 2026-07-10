@@ -13,6 +13,7 @@ import bm.b0b0b0.soulBuyer.item.ItemRegistry;
 import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.service.SellService;
+import bm.b0b0b0.soulBuyer.util.MaterialParser;
 import bm.b0b0b0.soulBuyer.gui.BuyerGuiService;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -154,7 +155,7 @@ public final class SoulBuyerCommandRegistrar {
             sender.sendMessage(Component.text("[SoulBuyer] item not found: " + (itemId == null ? "netherite_upgrade" : itemId)));
             return 0;
         }
-        Material sourceMaterial = Material.valueOf(definition.material().toUpperCase(Locale.ROOT));
+        Material sourceMaterial = MaterialParser.parse(definition.material());
         ItemUnitQuote quote = sellService.unitQuote(player, definition);
         ItemStack hiddenStack = itemRenderer.render(player, definition, quote);
         ItemStack rawStack = ItemStack.of(sourceMaterial, Math.max(1, Math.min(64, quote.inventoryAmount())));

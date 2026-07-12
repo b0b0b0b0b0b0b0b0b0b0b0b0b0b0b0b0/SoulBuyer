@@ -43,7 +43,7 @@ public final class MessageService {
     public Component component(String locale, String key, String... pairs) {
         String prefix = loader.raw(locale, "prefix");
         String body = HexColorParser.replacePlaceholders(loader.raw(locale, key), pairs);
-        return HexColorParser.parse(prefix + body);
+        return HexColorParser.parse(prefix).append(HexColorParser.parse(body));
     }
 
     public Component guiText(Player player, String key, String... pairs) {

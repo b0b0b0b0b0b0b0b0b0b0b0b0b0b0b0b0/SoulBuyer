@@ -21,6 +21,18 @@ public final class GuiAutosellSettings extends YamlSerializable {
     public int size = 54;
 
     @NewLine
+    @Comment({
+            @CommentValue("Кнопки и фон меню автопродажи."),
+            @CommentValue("action:"),
+            @CommentValue("  DECORATION — фон и блок info"),
+            @CommentValue("  AUTO_TOGGLE — вкл/выкл автопродажу"),
+            @CommentValue("  AUTO_TRIGGER — когда продавать (подбор / меню / сундук)"),
+            @CommentValue("  AUTO_NOTIFY — куда писать уведомления"),
+            @CommentValue("  AUTO_MIN_PRICE — минимальная цена за штуку"),
+            @CommentValue("  AUTO_PAYOUT — обычный или донатный скупщик"),
+            @CommentValue("  AUTO_CATEGORY — ЛКМ вкл/выкл категорию, ПКМ выбор предметов (+ category-filter)"),
+            @CommentValue("  AUTO_BACK — назад в скупщик")
+    })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 
     private static Map<String, GuiGeneralSettings.GuiElementSettings> defaultElements() {

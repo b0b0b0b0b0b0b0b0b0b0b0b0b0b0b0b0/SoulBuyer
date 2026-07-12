@@ -114,6 +114,7 @@ public final class BuyerBoostersMenu implements SoulBuyerGuiHolder {
     }
 
     private void fillFrame() {
+        int[] separatorSlots = boostersGui.separatorSlots.stream().mapToInt(Integer::intValue).toArray();
         GuiLayoutHelper.fillBorderAndSeparators(
                 inventory,
                 player,
@@ -122,7 +123,7 @@ public final class BuyerBoostersMenu implements SoulBuyerGuiHolder {
                 boostersGui.elements.get("border"),
                 boostersGui.elements.get("separator"),
                 actions::containsKey,
-                new int[]{10, 11, 12, 13, 14, 15, 16, 19, 25, 28, 34}
+                separatorSlots
         );
     }
 

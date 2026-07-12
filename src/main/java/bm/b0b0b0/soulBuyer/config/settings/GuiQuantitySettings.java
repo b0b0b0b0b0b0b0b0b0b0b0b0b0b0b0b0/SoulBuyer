@@ -27,6 +27,16 @@ public final class GuiQuantitySettings extends YamlSerializable {
     public int amountInfoSlot = 22;
 
     @NewLine
+    @Comment({
+            @CommentValue("Кнопки и фон меню выбора количества."),
+            @CommentValue("action:"),
+            @CommentValue("  DECORATION — фон и блок amount-info"),
+            @CommentValue("  QTY_MINUS_1 / QTY_PLUS_1 / QTY_MINUS_5 / QTY_PLUS_5 / QTY_MINUS_10 / QTY_PLUS_10"),
+            @CommentValue("  QTY_SET_1 / QTY_SET_5 / QTY_SET_10 — быстрый выбор количества"),
+            @CommentValue("  QTY_CONFIRM — продать выбранное"),
+            @CommentValue("  QTY_SELL_ALL — продать максимум"),
+            @CommentValue("  QTY_BACK — назад в скупщик")
+    })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 
     private static Map<String, GuiGeneralSettings.GuiElementSettings> defaultElements() {

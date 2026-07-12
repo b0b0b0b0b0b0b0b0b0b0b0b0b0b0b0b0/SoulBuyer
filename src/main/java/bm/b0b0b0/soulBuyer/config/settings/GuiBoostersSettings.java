@@ -20,7 +20,26 @@ public final class GuiBoostersSettings extends YamlSerializable {
     @Comment(@CommentValue("54 = 6 рядов"))
     public int size = 54;
 
+    @Comment({
+            @CommentValue("Слоты серых панелей (elements.separator) вокруг офферов 20, 22, 24."),
+            @CommentValue("Остальные пустые ячейки заливаются elements.border (чёрное стекло).")
+    })
+    public List<Integer> separatorSlots = List.of(
+            10, 11, 12, 13, 14, 15, 16,
+            19, 25, 28, 34,
+            29, 30, 31, 32, 33
+    );
+
     @NewLine
+    @Comment({
+            @CommentValue("Кнопки и шаблоны фона меню бустеров."),
+            @CommentValue("border / separator — шаблоны (slot: -1). Имя стёкол: lang → gui.boosters.border / separator."),
+            @CommentValue("action:"),
+            @CommentValue("  DECORATION — фон (border, separator) и справка info; клик ничего не делает"),
+            @CommentValue("  BOOSTER_BUY — покупка; offer-id = ключ из config.yml → boosters.offers"),
+            @CommentValue("  BOOSTER_BACK — назад в скупщик"),
+            @CommentValue("category-filter и sort-filter здесь не нужны — оставь \"\".")
+    })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 
     private static Map<String, GuiGeneralSettings.GuiElementSettings> defaultElements() {

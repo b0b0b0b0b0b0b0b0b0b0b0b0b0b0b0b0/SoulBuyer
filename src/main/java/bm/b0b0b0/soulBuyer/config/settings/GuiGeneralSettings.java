@@ -17,28 +17,28 @@ public final class GuiGeneralSettings extends YamlSerializable {
     public boolean disableItemItalic = true;
 
     public static final class GuiElementSettings {
-        @Comment(@CommentValue("-1 = не привязан к слоту (шаблон)"))
+        @Comment(@CommentValue("Номер слота в меню (0–53). -1 = шаблон фона (border/separator), слот не занимает"))
         public int slot = 0;
 
-        @Comment(@CommentValue("Bukkit Material, например LIME_CONCRETE"))
+        @Comment(@CommentValue("Иконка предмета (Material Bukkit): BLACK_STAINED_GLASS_PANE, GOLD_INGOT…"))
         public String material = "STONE";
 
-        @Comment(@CommentValue("Ключ названия в lang/*.yml"))
+        @Comment(@CommentValue("Название: ключ из lang/*.yml (name-key → gui.… в переводе)"))
         public String nameKey = "";
 
-        @Comment(@CommentValue("Ключи строк lore в lang/*.yml"))
+        @Comment(@CommentValue("Строки lore: ключи из lang/*.yml, сверху вниз"))
         public List<String> loreKeys = List.of();
 
-        @Comment(@CommentValue("NONE | DECORATION | SELL_ALL | CLOSE | CATEGORY_FILTER | SORT_CYCLE | PAGE_PREV | PAGE_NEXT | …"))
+        @Comment(@CommentValue("Клик: DECORATION = декор без действия. Другие значения — в шапке elements этого gui/*.yml"))
         public String action = "NONE";
 
-        @Comment(@CommentValue("Для CATEGORY_FILTER — id категории; пусто = все"))
+        @Comment(@CommentValue("Только фильтр категорий (buyer/autosell): ores | mobs | plants | blocks | misc"))
         public String categoryFilter = "";
 
-        @Comment(@CommentValue("Для SORT_CYCLE — не используется; режимы в BuyerSortMode.cycleModes()"))
+        @Comment(@CommentValue("Не используется — оставь пустым"))
         public String sortFilter = "";
 
-        @Comment(@CommentValue("Для BOOSTER_BUY — id предложения из config.yml → boosters.offers"))
+        @Comment(@CommentValue("Только бустеры (BOOSTER_BUY): id из config.yml → boosters.offers"))
         public String offerId = "";
     }
 }

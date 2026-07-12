@@ -53,8 +53,19 @@ public final class GuiBuyerSettings extends YamlSerializable {
 
     @NewLine
     @Comment({
-            @CommentValue("Кнопки GUI. slot: -1 = только шаблон (filler/separator)."),
-            @CommentValue("action: SELL_ALL | DECORATION | CATEGORY_FILTER | SORT_CYCLE | PAGE_PREV | PAGE_NEXT | …"),
+            @CommentValue("Кнопки и шаблоны фона главного меню /buyer."),
+            @CommentValue("border / separator — шаблоны фона (slot: -1). Имена: lang → gui.buyer.border / separator."),
+            @CommentValue("separator-slots — где рисуется separator вместо border."),
+            @CommentValue("action:"),
+            @CommentValue("  DECORATION — декор (статы, часы, заглушки); клик игнорируется"),
+            @CommentValue("  SELL_ALL — продать всё из инвентаря"),
+            @CommentValue("  CATEGORY_FILTER — фильтр категории (+ category-filter: ores/mobs/…)"),
+            @CommentValue("  SORT_CYCLE — переключить сортировку"),
+            @CommentValue("  PAGE_PREV / PAGE_NEXT — страницы товаров"),
+            @CommentValue("  AUTOSELL — меню автопродажи"),
+            @CommentValue("  BOOSTERS — меню бустеров"),
+            @CommentValue("  NONE — заглушка (бустеры/автопродажа выключены)"),
+            @CommentValue("offer-id здесь не используется — оставь \"\".")
     })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 

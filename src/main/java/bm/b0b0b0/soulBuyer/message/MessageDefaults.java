@@ -19,7 +19,6 @@ public final class MessageDefaults {
         messages.put("categories.blocks", "Блоки");
         messages.put("categories.misc", "Прочее");
 
-        messages.put("gui.nav.filler", " ");
         messages.put("gui.nav.close", "&#FF5555Закрыть");
         messages.put("gui.nav.back", "&#FFAA00Назад");
 
@@ -74,7 +73,6 @@ public final class MessageDefaults {
         messages.put("categories.blocks", "Blocks");
         messages.put("categories.misc", "Misc");
 
-        messages.put("gui.nav.filler", " ");
         messages.put("gui.nav.close", "&#FF5555Close");
         messages.put("gui.nav.back", "&#FFAA00Back");
 

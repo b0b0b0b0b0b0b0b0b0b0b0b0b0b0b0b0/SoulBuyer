@@ -9,7 +9,6 @@ categories:
 
 gui:
   nav:
-    filler: " "
     close: "&#FF5555Close"
     back: "&#D8B4FEBack"
   buyer:

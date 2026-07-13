@@ -104,9 +104,6 @@ public final class SoulBuyer extends JavaPlugin {
         startupLog.bannerStart(getPluginMeta().getVersion());
         debugLog.boot("onEnable start, plugin=" + getPluginMeta().getVersion());
 
-        runtime = new SoulBuyerRuntime();
-        commandRegistrar = new SoulBuyerCommandRegistrar(this, runtime);
-        commandRegistrar.registerLifecycle();
         getServer().getPluginManager().registerEvents(new EconomyWaitListener(this), this);
 
         try {
@@ -129,6 +126,11 @@ public final class SoulBuyer extends JavaPlugin {
                     + " | items=" + pluginConfig.items().size()
                     + " | debug=" + pluginConfig.debug()
                     + " | debugTooltip=" + pluginConfig.debugTooltip());
+
+            runtime = new SoulBuyerRuntime();
+            commandRegistrar = new SoulBuyerCommandRegistrar(this, runtime);
+            commandRegistrar.bindCommandSettings(pluginConfig);
+            commandRegistrar.registerLifecycle();
 
             messageLoader = new MessageLoader(
                     this,

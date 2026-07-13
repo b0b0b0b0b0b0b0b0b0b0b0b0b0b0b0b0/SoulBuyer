@@ -3,6 +3,7 @@ package bm.b0b0b0.soulBuyer.message;
 import bm.b0b0b0.soulBuyer.integration.PlaceholderApiBridge;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
@@ -33,7 +34,15 @@ public final class MessageService {
     }
 
     public String locale(Player player) {
-        return playerLocales.getOrDefault(player.getUniqueId(), loader.defaultLocale());
+        String override = playerLocales.get(player.getUniqueId());
+        if (override != null) {
+            return override;
+        }
+        String clientLanguage = player.locale().getLanguage().toLowerCase(Locale.ROOT);
+        if (loader.containsLocale(clientLanguage)) {
+            return clientLanguage;
+        }
+        return loader.defaultLocale();
     }
 
     public Component component(Player player, String key, String... pairs) {

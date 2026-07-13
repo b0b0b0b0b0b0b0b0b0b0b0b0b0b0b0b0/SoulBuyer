@@ -37,8 +37,7 @@ public final class GuiBoostersSettings extends YamlSerializable {
             @CommentValue("action:"),
             @CommentValue("  DECORATION — фон (border, separator) и справка info; клик ничего не делает"),
             @CommentValue("  BOOSTER_BUY — покупка; offer-id = ключ из config.yml → boosters.offers"),
-            @CommentValue("  BOOSTER_BACK — назад в скупщик"),
-            @CommentValue("category-filter и sort-filter здесь не нужны — оставь \"\".")
+            @CommentValue("  BOOSTER_BACK — назад в скупщик")
     })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 

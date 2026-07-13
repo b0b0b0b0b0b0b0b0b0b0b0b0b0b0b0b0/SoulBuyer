@@ -143,6 +143,10 @@ public final class PluginConfig {
         return main.commands.openAliases;
     }
 
+    public SoulBuyerSettings.CommandsSettings commandsSettings() {
+        return main.commands;
+    }
+
     public SoulBuyerSettings.MarketSettings market() {
         return main.market;
     }

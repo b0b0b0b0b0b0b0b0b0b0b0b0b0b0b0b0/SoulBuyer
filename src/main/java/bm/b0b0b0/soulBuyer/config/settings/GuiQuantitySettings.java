@@ -26,6 +26,12 @@ public final class GuiQuantitySettings extends YamlSerializable {
     @Comment(@CommentValue("Слот счётчика выбранного количества"))
     public int amountInfoSlot = 22;
 
+    @Comment({
+            @CommentValue("Разделитель вокруг блока выбора количества (серые панели)."),
+            @CommentValue("По умолчанию слоты 10–16 — второй ряд.")
+    })
+    public List<Integer> separatorSlots = List.of(10, 11, 12, 13, 14, 15, 16);
+
     @NewLine
     @Comment({
             @CommentValue("Кнопки и фон меню выбора количества."),

@@ -44,6 +44,7 @@ public final class SoulBuyerCommandRegistrar {
     private volatile PluginConfig config;
     private volatile MessageService messageService;
     private volatile ConfigurationLoader configurationLoader;
+    private volatile SoulBuyerSettings.CommandsSettings commandSettings = DEFAULT_SETTINGS.commands;
 
     public SoulBuyerCommandRegistrar(SoulBuyer plugin, SoulBuyerRuntime runtime) {
         this.plugin = plugin;
@@ -52,22 +53,41 @@ public final class SoulBuyerCommandRegistrar {
 
     public void registerLifecycle() {
         plugin.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            String mainName = defaultMainCommand();
-            plugin.debug().boot("registering commands: " + mainName + " + aliases " + defaultAliases(mainName));
+            String mainName = resolvedMainCommand();
+            List<String> aliases = resolvedOpenAliases(mainName);
+            plugin.debug().boot("registering commands: " + mainName + " + aliases " + aliases);
             event.registrar().register(buildCommandTree(mainName, false).build(), "Open SoulBuyer menu");
-            for (String alias : defaultAliases(mainName)) {
+            for (String alias : aliases) {
                 event.registrar().register(buildCommandTree(alias, false).build(), "Open SoulBuyer menu");
             }
-            String donateMain = defaultDonateMainCommand();
-            plugin.debug().boot("registering donate commands: " + donateMain + " + aliases " + defaultDonateAliases(donateMain));
+            if (!"soulbuyer".equals(mainName) && !aliases.contains("soulbuyer")) {
+                plugin.debug().boot("registering stable admin command: soulbuyer");
+                event.registrar().register(buildCommandTree("soulbuyer", false).build(), "Open SoulBuyer menu");
+            }
+
+            String donateMain = resolvedDonateMainCommand();
+            List<String> donateAliases = resolvedDonateOpenAliases(donateMain);
+            plugin.debug().boot("registering donate commands: " + donateMain + " + aliases " + donateAliases);
             event.registrar().register(buildCommandTree(donateMain, true).build(), "Open donate SoulBuyer menu");
-            for (String alias : defaultDonateAliases(donateMain)) {
+            for (String alias : donateAliases) {
                 event.registrar().register(buildCommandTree(alias, true).build(), "Open donate SoulBuyer menu");
+            }
+            if (!"donbuyer".equals(donateMain) && !donateAliases.contains("donbuyer")) {
+                plugin.debug().boot("registering stable admin command: donbuyer");
+                event.registrar().register(buildCommandTree("donbuyer", true).build(), "Open donate SoulBuyer menu");
             }
         });
     }
 
+    public void bindCommandSettings(PluginConfig pluginConfig) {
+        if (pluginConfig == null) {
+            return;
+        }
+        this.commandSettings = pluginConfig.commandsSettings();
+    }
+
     public void bind(PluginConfig pluginConfig, MessageService boundMessages, ConfigurationLoader loader) {
+        bindCommandSettings(pluginConfig);
         this.config = pluginConfig;
         this.messageService = boundMessages;
         this.configurationLoader = loader;
@@ -324,20 +344,20 @@ public final class SoulBuyerCommandRegistrar {
         return config != null ? config.permissionAdmin() : DEFAULT_SETTINGS.permissions.admin;
     }
 
-    private String defaultMainCommand() {
-        return normalizeCommand(DEFAULT_SETTINGS.commands.main);
+    private String resolvedMainCommand() {
+        return normalizeCommand(commandSettings.main);
     }
 
-    private String defaultDonateMainCommand() {
-        return normalizeCommand(DEFAULT_SETTINGS.commands.donateBuyer.main);
+    private String resolvedDonateMainCommand() {
+        return normalizeCommand(commandSettings.donateBuyer.main);
     }
 
-    private List<String> defaultAliases(String mainName) {
-        return normalizeAliases(DEFAULT_SETTINGS.commands.openAliases, mainName);
+    private List<String> resolvedOpenAliases(String mainName) {
+        return normalizeAliases(commandSettings.openAliases, mainName);
     }
 
-    private List<String> defaultDonateAliases(String mainName) {
-        return normalizeAliases(DEFAULT_SETTINGS.commands.donateBuyer.openAliases, mainName);
+    private List<String> resolvedDonateOpenAliases(String mainName) {
+        return normalizeAliases(commandSettings.donateBuyer.openAliases, mainName);
     }
 
     private String normalizeCommand(String name) {

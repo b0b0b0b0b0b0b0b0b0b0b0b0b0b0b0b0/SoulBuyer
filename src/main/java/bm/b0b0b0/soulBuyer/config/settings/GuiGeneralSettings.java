@@ -35,9 +35,6 @@ public final class GuiGeneralSettings extends YamlSerializable {
         @Comment(@CommentValue("Только фильтр категорий (buyer/autosell): ores | mobs | plants | blocks | misc"))
         public String categoryFilter = "";
 
-        @Comment(@CommentValue("Не используется — оставь пустым"))
-        public String sortFilter = "";
-
         @Comment(@CommentValue("Только бустеры (BOOSTER_BUY): id из config.yml → boosters.offers"))
         public String offerId = "";
     }

@@ -20,6 +20,12 @@ public final class GuiAutosellSettings extends YamlSerializable {
     @Comment(@CommentValue("54 = 6 рядов"))
     public int size = 54;
 
+    @Comment({
+            @CommentValue("Разделитель под кнопками категорий (серые панели)."),
+            @CommentValue("По умолчанию слоты 10–16 — второй ряд.")
+    })
+    public List<Integer> separatorSlots = List.of(10, 11, 12, 13, 14, 15, 16);
+
     @NewLine
     @Comment({
             @CommentValue("Кнопки и фон меню автопродажи."),

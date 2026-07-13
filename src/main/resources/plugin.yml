@@ -5,37 +5,6 @@ api-version: '1.21'
 authors: [ b0b0b0 ]
 load: POSTWORLD
 softdepend: [ Vault, PlayerPoints, Essentials, PlaceholderAPI ]
-commands:
-  soulbuyer:
-    description: SoulBuyer resource seller
-    usage: /soulbuyer
-  buyer:
-    description: Open SoulBuyer menu
-    usage: /buyer
-  sell:
-    description: Open SoulBuyer menu
-    usage: /sell
-  sb:
-    description: Open SoulBuyer menu
-    usage: /sb
-  rbuyer:
-    description: Open SoulBuyer menu
-    usage: /rbuyer
-  bs:
-    description: Open SoulBuyer menu
-    usage: /bs
-  donbuyer:
-    description: Open donate SoulBuyer menu (PlayerPoints)
-    usage: /donbuyer
-  dbuyer:
-    description: Open donate SoulBuyer menu
-    usage: /dbuyer
-  ppbuyer:
-    description: Open donate SoulBuyer menu
-    usage: /ppbuyer
-  donatesell:
-    description: Open donate SoulBuyer menu
-    usage: /donatesell
 permissions:
   soulbuyer.use:
     description: Open buyer menu

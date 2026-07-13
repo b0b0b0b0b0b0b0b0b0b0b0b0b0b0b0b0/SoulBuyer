@@ -80,10 +80,9 @@ public final class SoulBuyerSettings extends YamlSerializable {
     @NewLine
     @Comment({
             @CommentValue("=== КОМАНДЫ ==="),
-            @CommentValue("main — основная команда (/soulbuyer). Менять только при конфликте с другим плагином."),
-            @CommentValue("open-aliases — короткие команды, открывают GUI скупщика (как /buyer, /sell)."),
-            @CommentValue("donate-buyer — команды донатного скупщика (только если economy.donate-buyer-enabled: true)."),
-            @CommentValue("После изменения aliases нужен перезапуск сервера.")
+            @CommentValue("main — основная команда. open-aliases — доп. команды на то же меню."),
+            @CommentValue("Читается из config.yml при старте сервера. После смены — перезапуск (reload не перерегистрирует команды)."),
+            @CommentValue("Пример: main buyer + open-aliases seller → /buyer и /seller."),
     })
     public CommandsSettings commands = new CommandsSettings();
 
@@ -218,7 +217,13 @@ public final class SoulBuyerSettings extends YamlSerializable {
     }
 
     public static final class LocaleSettings {
+        @Comment(@CommentValue("Язык по умолчанию, если у клиента игрока нет ru/en"))
         public String defaultLocale = "ru";
+
+        @Comment({
+                @CommentValue("Запасной язык для отсутствующих ключей"),
+                @CommentValue("ru/en у клиента Minecraft подхватываются автоматически")
+        })
         public String fallbackLocale = "en";
     }
 

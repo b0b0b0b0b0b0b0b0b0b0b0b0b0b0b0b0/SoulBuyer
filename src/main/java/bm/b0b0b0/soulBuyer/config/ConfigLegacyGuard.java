@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ConfigLegacyGuard {
@@ -23,6 +24,8 @@ public final class ConfigLegacyGuard {
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to create plugin data folder", exception);
         }
+
+        stripLegacyGuiKeys(dataFolder.resolve("gui"), debug);
 
         Path configPath = dataFolder.resolve("config.yml");
         if (!Files.exists(configPath)) {
@@ -58,5 +61,37 @@ public final class ConfigLegacyGuard {
             }
         }
         return false;
+    }
+
+    private static void stripLegacyGuiKeys(Path guiFolder, SoulBuyerDebugLog debug) {
+        if (!Files.isDirectory(guiFolder)) {
+            return;
+        }
+        try (var files = Files.list(guiFolder)) {
+            for (Path file : files.filter(path -> path.toString().endsWith(".yml")).toList()) {
+                stripLegacyGuiKeysInFile(file, debug);
+            }
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to scan gui configs for legacy keys", exception);
+        }
+    }
+
+    private static void stripLegacyGuiKeysInFile(Path file, SoulBuyerDebugLog debug) throws IOException {
+        String content = Files.readString(file);
+        if (!content.contains("sort-filter")) {
+            return;
+        }
+        String lineSeparator = content.contains("\r\n") ? "\r\n" : "\n";
+        String cleaned = content.lines()
+                .filter(line -> !line.trim().startsWith("sort-filter:"))
+                .collect(Collectors.joining(lineSeparator));
+        if (cleaned.equals(content)) {
+            return;
+        }
+        if (!cleaned.endsWith(lineSeparator)) {
+            cleaned += lineSeparator;
+        }
+        Files.writeString(file, cleaned);
+        debug.boot("legacy guard: removed sort-filter from " + file.getFileName());
     }
 }

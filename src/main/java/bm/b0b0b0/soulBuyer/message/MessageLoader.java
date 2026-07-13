@@ -2,16 +2,21 @@ package bm.b0b0b0.soulBuyer.message;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MessageLoader {
+
+    private static final List<String> KNOWN_LOCALES = List.of("ru", "en");
 
     private final JavaPlugin plugin;
     private final String defaultLocale;
@@ -26,16 +31,19 @@ public final class MessageLoader {
 
     public synchronized void load() {
         locales.clear();
-        ensureLocaleFile("ru");
-        ensureLocaleFile("en");
-        loadLocale(defaultLocale);
-        if (!fallbackLocale.equals(defaultLocale)) {
-            loadLocale(fallbackLocale);
+        for (String locale : KNOWN_LOCALES) {
+            ensureLocaleFile(locale);
+            syncBundledLocale(locale);
+            loadLocale(locale);
         }
     }
 
     public String defaultLocale() {
         return defaultLocale;
+    }
+
+    public boolean containsLocale(String locale) {
+        return locales.containsKey(locale);
     }
 
     private void ensureLocaleFile(String locale) {
@@ -54,6 +62,63 @@ public final class MessageLoader {
             yaml.save(path.toFile());
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to write lang/" + locale + ".yml", exception);
+        }
+    }
+
+    private void syncBundledLocale(String locale) {
+        YamlConfiguration bundled = loadBundledConfiguration(locale);
+        if (bundled == null) {
+            return;
+        }
+        Path path = langPath(locale);
+        YamlConfiguration disk = YamlConfiguration.loadConfiguration(path.toFile());
+        boolean changed = mergeMissingInto(disk, bundled);
+        if (!changed) {
+            return;
+        }
+        try {
+            disk.save(path.toFile());
+            plugin.getLogger().info("[SoulBuyer] Lang: added missing keys from JAR to lang/" + locale + ".yml");
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to update lang/" + locale + ".yml", exception);
+        }
+    }
+
+    private boolean mergeMissingInto(ConfigurationSection target, ConfigurationSection defaults) {
+        boolean changed = false;
+        for (String key : defaults.getKeys(false)) {
+            if (defaults.isConfigurationSection(key)) {
+                ConfigurationSection defaultSection = defaults.getConfigurationSection(key);
+                if (defaultSection == null) {
+                    continue;
+                }
+                ConfigurationSection targetSection = target.getConfigurationSection(key);
+                if (targetSection == null) {
+                    targetSection = target.createSection(key);
+                    changed = true;
+                }
+                changed |= mergeMissingInto(targetSection, defaultSection);
+                continue;
+            }
+            if (!target.contains(key)) {
+                target.set(key, defaults.get(key));
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private YamlConfiguration loadBundledConfiguration(String locale) {
+        String resourcePath = "lang/" + locale + ".yml";
+        try (InputStream stream = plugin.getResource(resourcePath)) {
+            if (stream == null) {
+                return null;
+            }
+            YamlConfiguration yaml = new YamlConfiguration();
+            yaml.load(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            return yaml;
+        } catch (IOException | InvalidConfigurationException exception) {
+            throw new IllegalStateException("Failed to read bundled lang/" + locale + ".yml", exception);
         }
     }
 

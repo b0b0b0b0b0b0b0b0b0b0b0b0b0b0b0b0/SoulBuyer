@@ -8,6 +8,7 @@ import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerItemsSettings;
 import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
 import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -56,5 +57,19 @@ public final class ConfigurationLoader {
 
     public PluginConfig pluginConfig() {
         return pluginConfig;
+    }
+
+    public void saveMain(JavaPlugin plugin, SoulBuyerDebugLog debug) {
+        Path path = plugin.getDataFolder().toPath().resolve("config.yml");
+        try {
+            if (path.getParent() != null) {
+                Files.createDirectories(path.getParent());
+            }
+            mainSettings.save(path);
+            debug.boot("elytrium save OK: config.yml");
+        } catch (Exception exception) {
+            debug.error("elytrium save FAIL: config.yml", exception);
+            throw new IllegalStateException("Failed to save config.yml: " + exception.getMessage(), exception);
+        }
     }
 }

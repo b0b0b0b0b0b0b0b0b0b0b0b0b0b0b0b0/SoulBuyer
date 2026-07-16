@@ -17,6 +17,7 @@ import bm.b0b0b0.soulBuyer.autosell.AutosellContainerListener;
 import bm.b0b0b0.soulBuyer.autosell.AutosellPickupListener;
 import bm.b0b0b0.soulBuyer.autosell.AutosellService;
 import bm.b0b0b0.soulBuyer.booster.BoosterService;
+import bm.b0b0b0.soulBuyer.booster.GlobalBoosterService;
 import bm.b0b0b0.soulBuyer.limit.SellLimitService;
 import java.util.Map;
 import bm.b0b0b0.soulBuyer.gui.BuyerGuiService;
@@ -44,7 +45,9 @@ import bm.b0b0b0.soulBuyer.service.BuyerStatsService;
 import bm.b0b0b0.soulBuyer.service.SellSecureStorage;
 import bm.b0b0b0.soulBuyer.service.SellService;
 import bm.b0b0b0.soulBuyer.sync.RedisBootstrap;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import bm.b0b0b0.soulBuyer.util.upd.SoulBuyerUpdateChecker;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.plugin.ServicePriority;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,6 +78,7 @@ public final class SoulBuyer extends JavaPlugin {
     private SoulBuyerRuntime runtime;
     private SoulBuyerApi soulBuyerApi;
     private SaleLogRepository saleLogRepository;
+    private ScheduledTask saleFlushTask;
 
     private PluginConfig pendingConfig;
     private StorageSession pendingSession;
@@ -119,6 +123,7 @@ public final class SoulBuyer extends JavaPlugin {
             PluginConfig pluginConfig = configurationLoader.load(this, debugLog);
             debugLog.setEnabled(pluginConfig.debug());
             debugLog.setTooltipDebugEnabled(pluginConfig.debugTooltip());
+            startupLog.stepSchedulers();
             startupLog.stepOk("Конфиг — storage=" + pluginConfig.storageType()
                     + ", предметов=" + pluginConfig.items().size()
                     + ", debug=" + pluginConfig.debug());
@@ -170,12 +175,12 @@ public final class SoulBuyer extends JavaPlugin {
             logRedisStatus(pluginConfig, redis);
             debugLog.boot("redis step OK in " + (System.currentTimeMillis() - startedAt) + "ms");
 
-            Bukkit.getScheduler().runTask(this, () -> beginActivate(pluginConfig, session, redis));
+            PluginSchedulers.runGlobal(this, () -> beginActivate(pluginConfig, session, redis));
         } catch (Throwable throwable) {
             debugLog.error("storage bootstrap FAILED after " + (System.currentTimeMillis() - startedAt) + "ms", throwable);
             startupLog.stepFail("Хранилище — ошибка подключения");
             startupLog.bannerFailure("storage bootstrap failed");
-            Bukkit.getScheduler().runTask(this, () -> {
+            PluginSchedulers.runGlobal(this, () -> {
                 shutdownStartedResources();
                 if (isEnabled()) {
                     getServer().getPluginManager().disablePlugin(this);
@@ -189,7 +194,7 @@ public final class SoulBuyer extends JavaPlugin {
             return;
         }
         debugLog.log("economy plugin event -> retry activation");
-        Bukkit.getScheduler().runTask(this, this::attemptEconomyActivation);
+        PluginSchedulers.runGlobal(this, this::attemptEconomyActivation);
     }
 
     private void beginActivate(PluginConfig pluginConfig, StorageSession session, RedisBootstrap redis) {
@@ -228,7 +233,13 @@ public final class SoulBuyer extends JavaPlugin {
         PlayerPointsEconomyHook playerPointsEconomyHook = new PlayerPointsEconomyHook(debugLog);
 
         if (needVault) {
-            VaultEconomyHook.ProbeState vaultState = vaultEconomyHook.probe();
+            VaultEconomyHook.ProbeState vaultState;
+            try {
+                vaultState = vaultEconomyHook.probe();
+            } catch (NoClassDefFoundError error) {
+                debugLog.warn("vault probe crashed without Vault API: " + error.getMessage());
+                vaultState = VaultEconomyHook.ProbeState.VAULT_ABSENT;
+            }
             if (vaultState != VaultEconomyHook.ProbeState.READY) {
                 handleVaultEconomyWait(vaultState);
                 return;
@@ -267,19 +278,52 @@ public final class SoulBuyer extends JavaPlugin {
             }
         }
         if (state == VaultEconomyHook.ProbeState.VAULT_ABSENT) {
+            if (tryFallbackToPlayerPointsOnly()) {
+                return;
+            }
             abortEconomyBootstrap(
-                    "Vault не найден. Установите Vault и economy-плагин (EssentialsX, CMI или аналог)."
+                    "Нет экономики. На Folia: VaultUnlocked + economy, либо PlayerPoints "
+                            + "(economy.player-points-enabled: true)."
             );
             return;
         }
         if (state == VaultEconomyHook.ProbeState.ECONOMY_ABSENT
                 && !EconomyPluginPresence.anyKnownEconomyPluginInstalled()) {
+            if (tryFallbackToPlayerPointsOnly()) {
+                return;
+            }
             abortEconomyBootstrap(
-                    "Vault установлен, но economy-плагин не найден. Установите EssentialsX, CMI или аналог."
+                    "Vault есть, но economy-плагин не найден. Установите EssentialsX/CMI "
+                            + "или переключитесь на PlayerPoints (economy.player-points-enabled: true)."
             );
             return;
         }
         scheduleEconomyRetry("Economy-провайдер Vault");
+    }
+
+    private boolean tryFallbackToPlayerPointsOnly() {
+        if (pendingConfig == null || pendingConfig.playerPointsEnabled()) {
+            return false;
+        }
+        if (!EconomyPluginPresence.playerPointsInstalled()) {
+            startupLog.stepSkipped("PlayerPoints — не найден, fallback невозможен");
+            return false;
+        }
+        pendingConfig.enablePlayerPointsOnlyMode();
+        if (configurationLoader != null) {
+            try {
+                configurationLoader.saveMain(this, debugLog);
+                startupLog.stepOk("Конфиг — economy.player-points-enabled: true (авто, без Vault)");
+            } catch (Exception exception) {
+                debugLog.warn("failed to persist player-points-only fallback: " + exception.getMessage());
+                startupLog.stepOk("Режим PlayerPoints-only (конфиг не сохранён на диск)");
+            }
+        } else {
+            startupLog.stepOk("Режим PlayerPoints-only (без Vault)");
+        }
+        economyWaitLogged = false;
+        attemptEconomyActivation();
+        return true;
     }
 
     private void handlePlayerPointsWait(PlayerPointsEconomyHook.ProbeState state) {
@@ -344,7 +388,7 @@ public final class SoulBuyer extends JavaPlugin {
             return;
         }
         economyRetryAttempt++;
-        getServer().getScheduler().runTaskLater(this, this::attemptEconomyActivation, ECONOMY_RETRY_TICKS);
+        PluginSchedulers.runGlobalLater(this, this::attemptEconomyActivation, ECONOMY_RETRY_TICKS);
     }
 
     private void finishActivate(
@@ -399,7 +443,18 @@ public final class SoulBuyer extends JavaPlugin {
         ProgressionService progressionService = new ProgressionService(pluginConfig);
 
         marketService = new MarketService(this, pluginConfig, session.market(), redisBootstrap);
-        redisBootstrap.startSubscriber(marketService::applyRemoteUpdate);
+
+        GlobalBoosterService globalBoosterService = new GlobalBoosterService(
+                pluginConfig,
+                session.globalBoosters(),
+                redisBootstrap,
+                debugLog
+        );
+        globalBoosterService.start();
+        redisBootstrap.startSubscriber(
+                marketService::applyRemoteUpdate,
+                globalBoosterService::applyRemoteUpdate
+        );
 
         CatalogRotationRepository catalogRotationRepository = new YamlCatalogRotationRepository(
                 this,
@@ -422,7 +477,7 @@ public final class SoulBuyer extends JavaPlugin {
                     return Map.of();
                 })
                 .thenAccept(coefficients ->
-                        Bukkit.getScheduler().runTask(this, () -> {
+                        PluginSchedulers.runGlobal(this, () -> {
                             if (!isEnabled() || !bootstrapFinished.get()) {
                                 return;
                             }
@@ -446,7 +501,8 @@ public final class SoulBuyer extends JavaPlugin {
                 session.playerProgress(),
                 vaultEconomyHook,
                 playerPointsEconomyHook,
-                playerId -> session.playerProgress().find(playerId).thenAccept(runtime::cacheProgress)
+                playerId -> session.playerProgress().find(playerId).thenAccept(runtime::cacheProgress),
+                globalBoosterService
         );
         SellLimitService sellLimitService = new SellLimitService(
                 pluginConfig,
@@ -557,12 +613,8 @@ public final class SoulBuyer extends JavaPlugin {
         }
 
         long flushInterval = Math.max(1000L, pluginConfig.market().saleFlushIntervalMs);
-        getServer().getScheduler().runTaskTimerAsynchronously(
-                this,
-                saleLogRepository::flushPending,
-                flushInterval / 50L,
-                flushInterval / 50L
-        );
+        long flushTicks = Math.max(1L, flushInterval / 50L);
+        saleFlushTask = PluginSchedulers.runAsyncTimer(this, saleLogRepository::flushPending, flushTicks, flushTicks);
 
         startupLog.info("Загрузка коэффициентов рынка...");
         debugLog.boot("SoulBuyer wiring complete, waiting for market | storage=" + pluginConfig.storageType()
@@ -649,6 +701,10 @@ public final class SoulBuyer extends JavaPlugin {
             debugLog.boot("onDisable start, ready=" + (runtime != null && runtime.isReady()));
         }
         economyWaitActive.set(false);
+        if (saleFlushTask != null) {
+            saleFlushTask.cancel();
+            saleFlushTask = null;
+        }
         if (saleLogRepository != null) {
             try {
                 saleLogRepository.drainPending().get(5L, TimeUnit.SECONDS);

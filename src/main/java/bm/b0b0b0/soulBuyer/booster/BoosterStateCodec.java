@@ -2,6 +2,7 @@ package bm.b0b0b0.soulBuyer.booster;
 
 import bm.b0b0b0.soulBuyer.model.ActiveBooster;
 import bm.b0b0b0.soulBuyer.model.BoosterType;
+import bm.b0b0b0.soulBuyer.model.GlobalBoosterState;
 import bm.b0b0b0.soulBuyer.model.PlayerBoosterState;
 import java.util.EnumMap;
 import java.util.Map;
@@ -14,8 +15,24 @@ public final class BoosterStateCodec {
     }
 
     public static String encode(PlayerBoosterState state) {
+        return encodeActive(state.active());
+    }
+
+    public static String encode(GlobalBoosterState state) {
+        return encodeActive(state.active());
+    }
+
+    public static PlayerBoosterState decode(UUID playerId, String payload) {
+        return new PlayerBoosterState(playerId, decodeActive(payload));
+    }
+
+    public static GlobalBoosterState decodeGlobal(String payload) {
+        return new GlobalBoosterState(decodeActive(payload));
+    }
+
+    private static String encodeActive(Map<BoosterType, ActiveBooster> active) {
         YamlConfiguration yaml = new YamlConfiguration();
-        for (Map.Entry<BoosterType, ActiveBooster> entry : state.active().entrySet()) {
+        for (Map.Entry<BoosterType, ActiveBooster> entry : active.entrySet()) {
             ActiveBooster booster = entry.getValue();
             String path = "active." + entry.getKey().name().toLowerCase();
             yaml.set(path + ".effect", booster.effect());
@@ -24,19 +41,19 @@ public final class BoosterStateCodec {
         return yaml.saveToString();
     }
 
-    public static PlayerBoosterState decode(UUID playerId, String payload) {
+    private static Map<BoosterType, ActiveBooster> decodeActive(String payload) {
         Map<BoosterType, ActiveBooster> active = new EnumMap<>(BoosterType.class);
         if (payload == null || payload.isBlank()) {
-            return new PlayerBoosterState(playerId, active);
+            return active;
         }
         YamlConfiguration yaml = new YamlConfiguration();
         try {
             yaml.loadFromString(payload);
         } catch (Exception exception) {
-            throw new IllegalStateException("Invalid booster payload for " + playerId, exception);
+            throw new IllegalStateException("Invalid booster payload", exception);
         }
         if (!yaml.isConfigurationSection("active")) {
-            return new PlayerBoosterState(playerId, active);
+            return active;
         }
         for (String key : yaml.getConfigurationSection("active").getKeys(false)) {
             BoosterType type = BoosterType.parse(key);
@@ -44,6 +61,6 @@ public final class BoosterStateCodec {
             long expiresAt = yaml.getLong("active." + key + ".expires-at");
             active.put(type, new ActiveBooster(type, effect, expiresAt));
         }
-        return new PlayerBoosterState(playerId, active);
+        return active;
     }
 }

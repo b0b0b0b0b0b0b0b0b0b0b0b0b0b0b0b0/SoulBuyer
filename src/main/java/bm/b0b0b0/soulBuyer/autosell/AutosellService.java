@@ -10,6 +10,7 @@ import bm.b0b0b0.soulBuyer.service.InventorySellHelper;
 import bm.b0b0b0.soulBuyer.service.SaleDelivery;
 import bm.b0b0b0.soulBuyer.service.SellService;
 import bm.b0b0b0.soulBuyer.util.ItemStacks;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -62,7 +62,7 @@ public final class AutosellService {
 
     public void preload(Player player) {
         repository.find(player.getUniqueId()).thenAccept(settings ->
-                Bukkit.getScheduler().runTask(plugin, () -> cache.put(player.getUniqueId(), settings))
+                cache.put(player.getUniqueId(), settings)
         );
     }
 
@@ -328,7 +328,7 @@ public final class AutosellService {
         cache.put(player.getUniqueId(), updated);
         repository.save(updated).thenRun(() -> {
             if (onSaved != null) {
-                Bukkit.getScheduler().runTask(plugin, onSaved);
+                PluginSchedulers.run(plugin, player, onSaved);
             }
         });
     }

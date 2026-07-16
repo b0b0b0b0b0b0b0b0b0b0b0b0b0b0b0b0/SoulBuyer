@@ -18,18 +18,18 @@ import org.bukkit.inventory.ItemStack;
 
 public final class ItemRegistry {
 
-    private final Map<String, SellableItemDefinition> poolById = new LinkedHashMap<>();
-    private Set<String> activeIds = Set.of();
+    private volatile Map<String, SellableItemDefinition> poolById = Map.of();
+    private volatile Set<String> activeIds = Set.of();
 
     public ItemRegistry(PluginConfig config) {
         reload(config);
     }
 
     public void reload(PluginConfig config) {
-        poolById.clear();
+        LinkedHashMap<String, SellableItemDefinition> nextPool = new LinkedHashMap<>();
         for (Map.Entry<String, SoulBuyerSettings.SellableItemSettings> entry : config.items().entrySet()) {
             SoulBuyerSettings.SellableItemSettings settings = entry.getValue();
-            poolById.put(entry.getKey(), new SellableItemDefinition(
+            nextPool.put(entry.getKey(), new SellableItemDefinition(
                     entry.getKey(),
                     settings.material,
                     settings.displayMaterial,
@@ -39,54 +39,60 @@ public final class ItemRegistry {
                     settings.customModelData == null ? -1 : settings.customModelData
             ));
         }
+        poolById = Map.copyOf(nextPool);
         activateAll();
     }
 
     public void activateAll() {
-        activeIds = new LinkedHashSet<>(poolById.keySet());
+        activeIds = Set.copyOf(poolById.keySet());
     }
 
     public void applyActiveIds(Set<String> ids) {
+        Map<String, SellableItemDefinition> pool = poolById;
         LinkedHashSet<String> validated = new LinkedHashSet<>();
         for (String id : ids) {
-            if (poolById.containsKey(id)) {
+            if (pool.containsKey(id)) {
                 validated.add(id);
             }
         }
-        if (validated.isEmpty() && !poolById.isEmpty()) {
-            validated.add(poolById.keySet().iterator().next());
+        if (validated.isEmpty() && !pool.isEmpty()) {
+            validated.add(pool.keySet().iterator().next());
         }
-        activeIds = validated;
+        activeIds = Set.copyOf(validated);
     }
 
     public Collection<SellableItemDefinition> all() {
-        List<SellableItemDefinition> active = new ArrayList<>();
-        for (String id : activeIds) {
-            SellableItemDefinition definition = poolById.get(id);
+        Map<String, SellableItemDefinition> pool = poolById;
+        Set<String> active = activeIds;
+        List<SellableItemDefinition> result = new ArrayList<>(active.size());
+        for (String id : active) {
+            SellableItemDefinition definition = pool.get(id);
             if (definition != null) {
-                active.add(definition);
+                result.add(definition);
             }
         }
-        return active;
+        return result;
     }
 
     public List<SellableItemDefinition> activeByCategory(String categoryId) {
         if (categoryId == null || categoryId.isBlank()) {
             return List.of();
         }
-        List<SellableItemDefinition> active = new ArrayList<>();
-        for (String id : activeIds) {
-            SellableItemDefinition definition = poolById.get(id);
+        Map<String, SellableItemDefinition> pool = poolById;
+        Set<String> active = activeIds;
+        List<SellableItemDefinition> result = new ArrayList<>();
+        for (String id : active) {
+            SellableItemDefinition definition = pool.get(id);
             if (definition != null && categoryId.equals(definition.categoryId())) {
-                active.add(definition);
+                result.add(definition);
             }
         }
-        active.sort(java.util.Comparator.comparing(SellableItemDefinition::id));
-        return active;
+        result.sort(java.util.Comparator.comparing(SellableItemDefinition::id));
+        return result;
     }
 
     public List<SellableItemDefinition> pool() {
-        return new ArrayList<>(poolById.values());
+        return List.copyOf(poolById.values());
     }
 
     public int poolSize() {
@@ -120,8 +126,9 @@ public final class ItemRegistry {
         if (ItemStacks.isAbsent(itemStack)) {
             return Optional.empty();
         }
+        Map<String, SellableItemDefinition> pool = poolById;
         for (String id : activeIds) {
-            SellableItemDefinition definition = poolById.get(id);
+            SellableItemDefinition definition = pool.get(id);
             if (definition != null && matches(definition, itemStack)) {
                 return Optional.of(definition);
             }

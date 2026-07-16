@@ -1,5 +1,6 @@
 package bm.b0b0b0.soulBuyer.autosell;
 
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -56,8 +57,13 @@ public final class AutosellPickupListener implements Listener {
         if (!autosellService.canAccess(player)) {
             return;
         }
-        plugin.getServer().getScheduler().runTaskLater(
+        if (pickupDelayTicks <= 0) {
+            autosellService.onItemAcquired(player, stack);
+            return;
+        }
+        PluginSchedulers.runLater(
                 plugin,
+                player,
                 () -> autosellService.onItemAcquired(player, stack),
                 pickupDelayTicks
         );

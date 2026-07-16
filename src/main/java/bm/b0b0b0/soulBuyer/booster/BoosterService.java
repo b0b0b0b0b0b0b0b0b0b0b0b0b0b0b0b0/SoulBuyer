@@ -11,12 +11,13 @@ import bm.b0b0b0.soulBuyer.model.BoosterType;
 import bm.b0b0b0.soulBuyer.model.PlayerBoosterState;
 import bm.b0b0b0.soulBuyer.repository.PlayerBoosterRepository;
 import bm.b0b0b0.soulBuyer.repository.PlayerProgressRepository;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.Bukkit;
+import java.util.function.Consumer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -29,7 +30,8 @@ public final class BoosterService {
     private final PlayerProgressRepository progressRepository;
     private final VaultEconomyHook vaultEconomyHook;
     private final PlayerPointsEconomyHook playerPointsEconomyHook;
-    private final java.util.function.Consumer<java.util.UUID> progressCacheRefresher;
+    private final Consumer<UUID> progressCacheRefresher;
+    private final GlobalBoosterService globalBoosterService;
     private final Map<UUID, PlayerBoosterState> cache = new ConcurrentHashMap<>();
 
     public BoosterService(
@@ -40,7 +42,8 @@ public final class BoosterService {
             PlayerProgressRepository progressRepository,
             VaultEconomyHook vaultEconomyHook,
             PlayerPointsEconomyHook playerPointsEconomyHook,
-            java.util.function.Consumer<java.util.UUID> progressCacheRefresher
+            Consumer<UUID> progressCacheRefresher,
+            GlobalBoosterService globalBoosterService
     ) {
         this.plugin = plugin;
         this.config = config;
@@ -50,6 +53,7 @@ public final class BoosterService {
         this.vaultEconomyHook = vaultEconomyHook;
         this.playerPointsEconomyHook = playerPointsEconomyHook;
         this.progressCacheRefresher = progressCacheRefresher;
+        this.globalBoosterService = globalBoosterService;
     }
 
     public boolean featureEnabled() {
@@ -68,6 +72,10 @@ public final class BoosterService {
         return config.boosters();
     }
 
+    public GlobalBoosterService global() {
+        return globalBoosterService;
+    }
+
     public void preload(Player player) {
         boosterRepository.find(player.getUniqueId()).thenAccept(state -> cache.put(player.getUniqueId(), prune(state)));
     }
@@ -77,18 +85,15 @@ public final class BoosterService {
     }
 
     public double additiveMultiplier(Player player) {
-        ActiveBooster booster = active(player, BoosterType.MULTIPLIER);
-        return booster == null ? 0.0D : booster.effect();
+        return personalAdditive(player) + globalBoosterService.additiveMultiplier();
     }
 
     public double moneyMultiplier(Player player) {
-        ActiveBooster booster = active(player, BoosterType.MONEY);
-        return booster == null ? 1.0D : booster.effect();
+        return personalMoney(player) * globalBoosterService.moneyMultiplier();
     }
 
     public double limitMultiplier(Player player) {
-        ActiveBooster booster = active(player, BoosterType.LIMIT);
-        return booster == null ? 1.0D : booster.effect();
+        return personalLimit(player) * globalBoosterService.limitMultiplier();
     }
 
     public ActiveBooster active(Player player, BoosterType type) {
@@ -142,13 +147,28 @@ public final class BoosterService {
         }).thenAccept(success -> finish(player, onComplete, success, offer));
     }
 
+    private double personalAdditive(Player player) {
+        ActiveBooster booster = active(player, BoosterType.MULTIPLIER);
+        return booster == null ? 0.0D : booster.effect();
+    }
+
+    private double personalMoney(Player player) {
+        ActiveBooster booster = active(player, BoosterType.MONEY);
+        return booster == null ? 1.0D : booster.effect();
+    }
+
+    private double personalLimit(Player player) {
+        ActiveBooster booster = active(player, BoosterType.LIMIT);
+        return booster == null ? 1.0D : booster.effect();
+    }
+
     private void finish(
             Player player,
             Runnable onComplete,
             boolean success,
             SoulBuyerSettings.BoosterOfferSettings offer
     ) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        PluginSchedulers.run(plugin, player, () -> {
             if (player.isOnline()) {
                 if (success && offer != null) {
                     messageService.send(player, "boosters.purchased", new String[]{

@@ -4,12 +4,14 @@ import bm.b0b0b0.soulBuyer.bootstrap.SoulBuyerStartupLog;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
 import bm.b0b0b0.soulBuyer.database.migration.StorageTypeMigrationService;
+import bm.b0b0b0.soulBuyer.repository.SqlGlobalBoosterRepository;
 import bm.b0b0b0.soulBuyer.repository.SqlMarketRepository;
 import bm.b0b0b0.soulBuyer.repository.SqlPlayerAutosellRepository;
 import bm.b0b0b0.soulBuyer.repository.SqlPlayerBoosterRepository;
 import bm.b0b0b0.soulBuyer.repository.SqlPlayerProgressRepository;
 import bm.b0b0b0.soulBuyer.repository.SqlPlayerSellLimitRepository;
 import bm.b0b0b0.soulBuyer.repository.SqlSaleLogRepository;
+import bm.b0b0b0.soulBuyer.repository.YamlGlobalBoosterRepository;
 import bm.b0b0b0.soulBuyer.repository.YamlMarketRepository;
 import bm.b0b0b0.soulBuyer.repository.YamlPlayerAutosellRepository;
 import bm.b0b0b0.soulBuyer.repository.YamlPlayerBoosterRepository;
@@ -87,6 +89,11 @@ public final class StorageBootstrap {
                 executor,
                 config.isSqliteStorage()
         );
+        SqlGlobalBoosterRepository globalBoosterRepository = new SqlGlobalBoosterRepository(
+                provider.dataSource(),
+                executor,
+                config.isSqliteStorage()
+        );
         SqlPlayerSellLimitRepository playerSellLimitRepository = new SqlPlayerSellLimitRepository(
                 provider.dataSource(),
                 executor,
@@ -98,6 +105,7 @@ public final class StorageBootstrap {
                 playerProgressRepository,
                 playerAutosellRepository,
                 playerBoosterRepository,
+                globalBoosterRepository,
                 playerSellLimitRepository,
                 marketRepository,
                 saleLogRepository,
@@ -141,6 +149,11 @@ public final class StorageBootstrap {
                 config,
                 executor
         );
+        YamlGlobalBoosterRepository globalBoosterRepository = new YamlGlobalBoosterRepository(
+                plugin,
+                config,
+                executor
+        );
         YamlPlayerSellLimitRepository playerSellLimitRepository = new YamlPlayerSellLimitRepository(
                 plugin,
                 config,
@@ -152,6 +165,7 @@ public final class StorageBootstrap {
                 playerProgressRepository,
                 playerAutosellRepository,
                 playerBoosterRepository,
+                globalBoosterRepository,
                 playerSellLimitRepository,
                 marketRepository,
                 saleLogRepository,

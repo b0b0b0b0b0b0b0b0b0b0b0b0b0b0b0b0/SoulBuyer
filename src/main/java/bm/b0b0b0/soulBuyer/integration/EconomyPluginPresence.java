@@ -36,7 +36,12 @@ public final class EconomyPluginPresence {
     }
 
     public static boolean vaultInstalled() {
-        return Bukkit.getPluginManager().getPlugin("Vault") != null;
+        return vaultBridgeInstalled();
+    }
+
+    public static boolean vaultBridgeInstalled() {
+        return Bukkit.getPluginManager().getPlugin("Vault") != null
+                || Bukkit.getPluginManager().getPlugin("VaultUnlocked") != null;
     }
 
     public static boolean playerPointsInstalled() {

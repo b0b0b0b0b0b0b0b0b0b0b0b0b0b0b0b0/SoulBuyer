@@ -5,6 +5,8 @@ import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.item.ItemRegistry;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.util.MaterialParser;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,13 +14,11 @@ import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.concurrent.ThreadLocalRandom;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 
 public final class BuyerCategoryIconAnimator {
 
@@ -35,7 +35,7 @@ public final class BuyerCategoryIconAnimator {
     private Function<String, String[]> categoryPairs = categoryId -> new String[0];
     private BooleanSupplier pausedCheck = () -> false;
     private BooleanSupplier menuOpenCheck = () -> false;
-    private BukkitTask task;
+    private ScheduledTask task;
 
     public BuyerCategoryIconAnimator(
             JavaPlugin plugin,
@@ -89,7 +89,7 @@ public final class BuyerCategoryIconAnimator {
             return;
         }
         long periodTicks = Math.max(20L, config.categoryIconAnimation().intervalSeconds * 20L);
-        task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, periodTicks, periodTicks);
+        task = PluginSchedulers.runTimer(plugin, player, this::tick, periodTicks, periodTicks);
     }
 
     private void tick() {

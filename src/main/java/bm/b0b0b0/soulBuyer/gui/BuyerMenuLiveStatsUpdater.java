@@ -2,11 +2,11 @@ package bm.b0b0b0.soulBuyer.gui;
 
 import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
 import bm.b0b0b0.soulBuyer.service.BuyerStatsService;
-import org.bukkit.Bukkit;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 
 public final class BuyerMenuLiveStatsUpdater {
 
@@ -18,7 +18,7 @@ public final class BuyerMenuLiveStatsUpdater {
     private final GuiGeneralSettings.GuiElementSettings statsElement;
     private final int statsSlot;
 
-    private BukkitTask task;
+    private ScheduledTask task;
 
     public BuyerMenuLiveStatsUpdater(
             JavaPlugin plugin,
@@ -47,7 +47,7 @@ public final class BuyerMenuLiveStatsUpdater {
         if (task != null) {
             return;
         }
-        task = Bukkit.getScheduler().runTaskTimer(plugin, this::apply, 20L, 20L);
+        task = PluginSchedulers.runTimer(plugin, player, this::apply, 20L, 20L);
     }
 
     public void stop() {

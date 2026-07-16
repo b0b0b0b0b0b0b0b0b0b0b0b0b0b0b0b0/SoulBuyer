@@ -163,6 +163,10 @@ public final class PluginConfig {
         return main.progression;
     }
 
+    public boolean awardPoints() {
+        return main.progression.awardPoints;
+    }
+
     public SoulBuyerSettings.AutosellSettings autosell() {
         return main.autosell;
     }
@@ -201,6 +205,11 @@ public final class PluginConfig {
 
     public boolean requiresPlayerPoints() {
         return main.economy.playerPointsEnabled;
+    }
+
+    public void enablePlayerPointsOnlyMode() {
+        main.economy.playerPointsEnabled = true;
+        main.economy.donateBuyerEnabled = false;
     }
 
     public BuyerPayoutMode defaultOpenPayoutMode() {

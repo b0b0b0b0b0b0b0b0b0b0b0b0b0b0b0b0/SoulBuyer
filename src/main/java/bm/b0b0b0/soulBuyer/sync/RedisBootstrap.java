@@ -52,25 +52,32 @@ public final class RedisBootstrap {
         }
     }
 
-    public void startSubscriber(Consumer<String> marketUpdateListener) {
+    public void startSubscriber(Consumer<String> marketUpdateListener, Consumer<String> globalBoosterListener) {
         if (pool == null) {
             debug.log("redis subscriber skipped (no pool)");
             return;
         }
-        debug.boot("redis subscriber starting on channel=" + config.redis().marketChannel);
+        String marketChannel = config.redis().marketChannel;
+        String globalChannel = config.redis().globalBoostersChannel;
+        debug.boot("redis subscriber starting on channels=" + marketChannel + ", " + globalChannel);
         pubSub = new JedisPubSub() {
             @Override
             public void onMessage(String channel, String message) {
-                if (config.redis().marketChannel.equals(channel)) {
+                if (marketChannel.equals(channel)) {
                     debug.log("redis market message: " + message);
                     marketUpdateListener.accept(message);
+                    return;
+                }
+                if (globalChannel.equals(channel)) {
+                    debug.log("redis global-boosters message");
+                    globalBoosterListener.accept(message);
                 }
             }
         };
         subscriberThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try (Jedis jedis = pool.getResource()) {
-                    jedis.subscribe(pubSub, config.redis().marketChannel);
+                    jedis.subscribe(pubSub, marketChannel, globalChannel);
                 } catch (Exception exception) {
                     if (Thread.currentThread().isInterrupted()) {
                         return;
@@ -94,13 +101,21 @@ public final class RedisBootstrap {
     }
 
     public void publishMarketUpdate(String payload) {
+        publish(config.redis().marketChannel, payload);
+    }
+
+    public void publishGlobalBoostersUpdate(String payload) {
+        publish(config.redis().globalBoostersChannel, payload);
+    }
+
+    private void publish(String channel, String payload) {
         if (pool == null) {
             return;
         }
         SoulBuyerIoExecutor.executor().execute(() -> {
             try (Jedis jedis = pool.getResource()) {
-                jedis.publish(config.redis().marketChannel, payload);
-                debug.log("redis published: " + payload);
+                jedis.publish(channel, payload);
+                debug.log("redis published to " + channel);
             } catch (Exception exception) {
                 plugin.getLogger().log(Level.WARNING, "Redis publish failed", exception);
                 debug.warn("redis publish failed: " + exception.getMessage());
@@ -128,7 +143,7 @@ public final class RedisBootstrap {
     private void sleepQuietly(long millis) {
         try {
             Thread.sleep(millis);
-        } catch (InterruptedException exception) {
+        } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
         }
     }

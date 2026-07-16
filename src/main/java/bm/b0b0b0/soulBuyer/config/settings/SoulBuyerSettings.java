@@ -147,6 +147,9 @@ public final class SoulBuyerSettings extends YamlSerializable {
         @Comment(@CommentValue("flat: plugins/SoulBuyer/data/boosters/{uuid}.yml — активные бустеры"))
         public String boostersFolder = "data/boosters";
 
+        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/global-boosters.yml — серверные бустеры"))
+        public String globalBoostersFile = "data/global-boosters.yml";
+
         @Comment(@CommentValue("flat: plugins/SoulBuyer/data/sell-limits/{uuid}.yml — продажи за период"))
         public String sellLimitsFolder = "data/sell-limits";
 
@@ -212,6 +215,9 @@ public final class SoulBuyerSettings extends YamlSerializable {
         @Comment(@CommentValue("Канал pub/sub для обновления цен между серверами"))
         public String marketChannel = "soulbuyer:market";
 
+        @Comment(@CommentValue("Канал pub/sub для глобальных бустеров между серверами"))
+        public String globalBoostersChannel = "soulbuyer:global-boosters";
+
         @Comment(@CommentValue("TTL кэша коэффициентов в Redis, сек"))
         public long cacheTtlSeconds = 300L;
     }
@@ -228,7 +234,10 @@ public final class SoulBuyerSettings extends YamlSerializable {
     }
 
     public static final class EconomySettings {
-        @Comment(@CommentValue("true — PlayerPoints на сервере; false — только Vault (как раньше)"))
+        @Comment({
+                @CommentValue("true — выплаты через PlayerPoints; false — через Vault."),
+                @CommentValue("На Folia без Vault: поставь PlayerPoints и true, либо плагин сам переключится, если Vault нет, а PP есть.")
+        })
         public boolean playerPointsEnabled = false;
 
         @Comment(@CommentValue("true — отдельное донатное меню за PlayerPoints + обычное за Vault"))
@@ -340,7 +349,10 @@ public final class SoulBuyerSettings extends YamlSerializable {
         @Comment(@CommentValue("LuckPerms-нода → множитель к деньгам и очкам (берётся максимальный из выданных)"))
         public Map<String, Double> permissionMultipliers = defaultPermissionMultipliers();
 
-        @Comment(@CommentValue("Доп. очки за каждую монету Vault-валюты от продажи"))
+        @Comment(@CommentValue("false — не начислять progression-очки и category XP за продажи"))
+        public boolean awardPoints = true;
+
+        @Comment(@CommentValue("Доп. очки за каждую монету Vault-валюты от продажи (если award-points: true)"))
         public double pointsPerCurrency = 0.1D;
 
         @Comment(@CommentValue("+% к доходу за каждый уровень XP в доминирующей категории"))
@@ -394,6 +406,9 @@ public final class SoulBuyerSettings extends YamlSerializable {
     public static final class BoostersSettings {
         @Comment(@CommentValue("false — кнопка бустеров скрыта, покупка недоступна"))
         public boolean enabled = true;
+
+        @Comment(@CommentValue("false — админ-команды глобальных бустеров и их эффект выключены"))
+        public boolean globalEnabled = true;
 
         @Comment(@CommentValue("progression_points | vault | playerpoints"))
         public String currency = "progression_points";

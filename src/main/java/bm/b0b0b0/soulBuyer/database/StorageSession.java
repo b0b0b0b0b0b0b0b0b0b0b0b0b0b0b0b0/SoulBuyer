@@ -1,5 +1,6 @@
 package bm.b0b0b0.soulBuyer.database;
 
+import bm.b0b0b0.soulBuyer.repository.GlobalBoosterRepository;
 import bm.b0b0b0.soulBuyer.repository.MarketRepository;
 import bm.b0b0b0.soulBuyer.repository.PlayerAutosellRepository;
 import bm.b0b0b0.soulBuyer.repository.PlayerBoosterRepository;
@@ -12,6 +13,7 @@ public record StorageSession(
         PlayerProgressRepository playerProgress,
         PlayerAutosellRepository playerAutosell,
         PlayerBoosterRepository playerBoosters,
+        GlobalBoosterRepository globalBoosters,
         PlayerSellLimitRepository playerSellLimits,
         MarketRepository market,
         SaleLogRepository saleLog,

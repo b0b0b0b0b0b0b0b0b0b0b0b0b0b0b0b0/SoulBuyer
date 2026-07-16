@@ -9,6 +9,7 @@ import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.PlayerAutosellSettings;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.service.SellService;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -124,7 +125,7 @@ public final class BuyerAutosellCategoryMenu implements SoulBuyerGuiHolder {
         if (closingIntentionally || !player.isOnline()) {
             return;
         }
-        Bukkit.getScheduler().runTask(plugin, () -> navigation.openAutosell(player, parentSession));
+        PluginSchedulers.runLater(plugin, player, () -> navigation.openAutosell(player, parentSession), 1L);
     }
 
     private void goBack() {

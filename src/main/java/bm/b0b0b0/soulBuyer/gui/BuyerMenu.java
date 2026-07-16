@@ -267,18 +267,18 @@ public final class BuyerMenu implements SoulBuyerGuiHolder {
             return;
         }
         processing = true;
-        sellService.sellItemFromInventory(player, itemId, payoutMode, () -> Bukkit.getScheduler().runTask(plugin, () -> {
+        sellService.sellItemFromInventory(player, itemId, payoutMode, () -> {
             processing = false;
             refreshIfOpen();
-        }));
+        });
     }
 
     private void sellAll() {
         processing = true;
-        sellService.sellAllFromInventory(player, payoutMode, () -> Bukkit.getScheduler().runTask(plugin, () -> {
+        sellService.sellAllFromInventory(player, payoutMode, () -> {
             processing = false;
             refreshIfOpen();
-        }));
+        });
     }
 
     private void changePage(int delta) {

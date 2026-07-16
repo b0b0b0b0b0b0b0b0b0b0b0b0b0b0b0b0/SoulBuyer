@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.UUID;
 import bm.b0b0b0.soulBuyer.util.ItemStacks;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -112,7 +113,7 @@ public final class SellService {
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAmount(player, context.itemRegistry(), itemId, amount);
-        startCollectedSale(player, collected, delivery, onComplete, payoutMode, true);
+        startCollectedSale(player, collected, delivery, onComplete, payoutMode, true, null);
     }
 
     public void sellFromContainer(
@@ -185,7 +186,7 @@ public final class SellService {
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAndRemove(player, context.itemRegistry(), filter);
-        startCollectedSale(player, collected, delivery, onComplete, payoutMode, notifyWhenEmpty);
+        startCollectedSale(player, collected, delivery, onComplete, payoutMode, notifyWhenEmpty, null);
     }
 
     public void sellFromContainer(
@@ -204,7 +205,7 @@ public final class SellService {
             return;
         }
         List<ItemStack> collected = InventorySellHelper.collectAndRemove(container, context.itemRegistry(), filter);
-        startCollectedSale(player, collected, delivery, onComplete, payoutMode, false);
+        startCollectedSale(player, collected, delivery, onComplete, payoutMode, false, container);
     }
 
     public void beginSecuredSale(Player player, List<ItemStack> sellStacks, List<ItemStack> returnStacks, Runnable onComplete) {
@@ -266,6 +267,7 @@ public final class SellService {
                 player,
                 sellStacks,
                 returnStacks,
+                null,
                 restoreFailedItemsToPlayer,
                 delivery,
                 onComplete,
@@ -281,13 +283,26 @@ public final class SellService {
             Runnable onComplete,
             BuyerPayoutMode payoutMode
     ) {
-        continueSecuredSale(player, sellStacks, returnStacks, true, delivery, onComplete, payoutMode);
+        continueSecuredSale(player, sellStacks, returnStacks, null, true, delivery, onComplete, payoutMode);
     }
 
     private void continueSecuredSale(
             Player player,
             List<ItemStack> sellStacks,
             List<ItemStack> returnStacks,
+            Inventory restoreContainer,
+            SaleDelivery delivery,
+            Runnable onComplete,
+            BuyerPayoutMode payoutMode
+    ) {
+        continueSecuredSale(player, sellStacks, returnStacks, restoreContainer, restoreContainer == null, delivery, onComplete, payoutMode);
+    }
+
+    private void continueSecuredSale(
+            Player player,
+            List<ItemStack> sellStacks,
+            List<ItemStack> returnStacks,
+            Inventory restoreContainer,
             boolean restoreFailedItemsToPlayer,
             SaleDelivery delivery,
             Runnable onComplete,
@@ -295,40 +310,45 @@ public final class SellService {
     ) {
         BuyerPayoutMode mode = payoutMode == null ? context.config().defaultOpenPayoutMode() : payoutMode;
         UUID playerId = player.getUniqueId();
+        String playerName = player.getName();
         if (!context.economyPayoutRouter().available(mode)) {
             context.messageService().send(player, noEconomyKey(mode));
-            restoreSecuredItems(player, playerId, restoreFailedItemsToPlayer);
+            restoreSecuredItems(player, playerId, restoreContainer, restoreFailedItemsToPlayer);
             complete(onComplete);
             return;
         }
-        debug.log("sell begin " + player.getName() + " stacks=" + sellStacks.size() + " return=" + returnStacks.size());
+        debug.log("sell begin " + playerName + " stacks=" + sellStacks.size() + " return=" + returnStacks.size());
 
         String periodKey = context.sellLimitService().periodKey();
         context.playerProgressRepository().find(playerId).thenCompose(progress -> {
             context.cacheProgress(progress);
             return context.sellLimitRepository().find(playerId, periodKey).thenApply(usage -> {
                 context.cacheSellLimitUsage(usage);
-                SellLimitSplit split = context.sellLimitService().split(player, sellStacks, usage);
-                SellQuote quote = context.priceQuoteService().quote(player, split.sellStacks(), progress);
-                return new PreparedSale(split, quote);
+                return new LoadedSaleData(progress, usage);
             });
-        }).thenAccept(prepared -> runMain(() -> {
-            if (prepared.quote().lines().isEmpty()) {
-                restoreSecuredItems(player, playerId, restoreFailedItemsToPlayer);
-                if (player.isOnline()) {
-                    String key = prepared.split().sellStacks().isEmpty() && !sellStacks.isEmpty()
-                            ? "sell.limit-reached"
-                            : "sell.empty";
-                    context.messageService().send(player, key);
-                }
+        }).thenAccept(loaded -> runFor(player, () -> {
+            if (!player.isOnline()) {
+                restoreSecuredItems(player, playerId, restoreContainer, restoreFailedItemsToPlayer);
                 complete(onComplete);
                 return;
             }
-            List<ItemStack> mergedReturn = concat(returnStacks, prepared.split().returnStacks());
+            SellLimitSplit split = context.sellLimitService().split(player, sellStacks, loaded.usage());
+            SellQuote quote = context.priceQuoteService().quote(player, split.sellStacks(), loaded.progress());
+            if (quote.lines().isEmpty()) {
+                restoreSecuredItems(player, playerId, restoreContainer, restoreFailedItemsToPlayer);
+                String key = split.sellStacks().isEmpty() && !sellStacks.isEmpty()
+                        ? "sell.limit-reached"
+                        : "sell.empty";
+                context.messageService().send(player, key);
+                complete(onComplete);
+                return;
+            }
+            List<ItemStack> mergedReturn = concat(returnStacks, split.returnStacks());
             finalizeSale(
                     player,
-                    prepared.quote(),
+                    quote,
                     mergedReturn,
+                    restoreContainer,
                     restoreFailedItemsToPlayer,
                     delivery,
                     onComplete,
@@ -336,9 +356,9 @@ public final class SellService {
                     periodKey
             );
         })).exceptionally(throwable -> {
-            debug.warn("sell async failed for " + player.getName() + ": " + throwable.getMessage());
-            runMain(() -> {
-                restoreSecuredItems(player, playerId, restoreFailedItemsToPlayer);
+            debug.warn("sell async failed for " + playerName + ": " + throwable.getMessage());
+            runFor(player, () -> {
+                restoreSecuredItems(player, playerId, restoreContainer, restoreFailedItemsToPlayer);
                 complete(onComplete);
             });
             return null;
@@ -351,9 +371,7 @@ public final class SellService {
         }
         UUID playerId = player.getUniqueId();
         String periodKey = context.sellLimitService().periodKey();
-        context.sellLimitRepository().find(playerId, periodKey).thenAccept(usage ->
-                runMain(() -> context.cacheSellLimitUsage(usage))
-        );
+        context.sellLimitRepository().find(playerId, periodKey).thenAccept(context::cacheSellLimitUsage);
     }
 
     private boolean isLimitExhaustedForFilter(Player player, Predicate<SellableItemDefinition> filter) {
@@ -378,12 +396,40 @@ public final class SellService {
         }
     }
 
-    private void restoreSecuredItems(Player player, UUID playerId, boolean restoreToPlayer) {
-        ItemReturner.returnSecured(player, context.secureStorage().tryAbort(playerId), restoreToPlayer);
+    private void restoreSecuredItems(
+            Player player,
+            UUID playerId,
+            Inventory restoreContainer,
+            boolean restoreToPlayer
+    ) {
+        List<ItemStack> stacks = context.secureStorage().tryAbort(playerId);
+        giveBack(player, restoreContainer, restoreToPlayer, stacks);
     }
 
-    private void cancelFinalize(Player player, UUID playerId, boolean restoreToPlayer) {
-        ItemReturner.returnSecured(player, context.secureStorage().cancelFinalize(playerId), restoreToPlayer);
+    private void cancelFinalize(
+            Player player,
+            UUID playerId,
+            Inventory restoreContainer,
+            boolean restoreToPlayer
+    ) {
+        List<ItemStack> stacks = context.secureStorage().cancelFinalize(playerId);
+        giveBack(player, restoreContainer, restoreToPlayer, stacks);
+    }
+
+    private void giveBack(
+            Player player,
+            Inventory restoreContainer,
+            boolean restoreToPlayer,
+            List<ItemStack> stacks
+    ) {
+        if (stacks == null || stacks.isEmpty()) {
+            return;
+        }
+        if (restoreContainer != null) {
+            ItemReturner.returnToContainer(plugin, restoreContainer, stacks, player);
+            return;
+        }
+        ItemReturner.returnSecured(player, stacks, restoreToPlayer);
     }
 
     private boolean beginSaleSession(Player player, Runnable onComplete) {
@@ -412,7 +458,8 @@ public final class SellService {
             SaleDelivery delivery,
             Runnable onComplete,
             BuyerPayoutMode payoutMode,
-            boolean notifyWhenEmpty
+            boolean notifyWhenEmpty,
+            Inventory restoreContainer
     ) {
         UUID playerId = player.getUniqueId();
         if (collected.isEmpty()) {
@@ -420,7 +467,16 @@ public final class SellService {
             return;
         }
         context.secureStorage().replaceSecuredItems(playerId, collected);
-        continueSecuredSale(player, collected, List.of(), delivery, onComplete, payoutMode);
+        continueSecuredSale(
+                player,
+                collected,
+                List.of(),
+                restoreContainer,
+                restoreContainer == null,
+                delivery,
+                onComplete,
+                payoutMode
+        );
     }
 
     private PlayerSellLimitUsage currentSellLimitUsage(Player player) {
@@ -445,7 +501,7 @@ public final class SellService {
         context.cacheSellLimitUsage(new PlayerSellLimitUsage(playerId, periodKey, sold));
     }
 
-    private record PreparedSale(SellLimitSplit split, SellQuote quote) {
+    private record LoadedSaleData(PlayerProgress progress, PlayerSellLimitUsage usage) {
     }
 
     private void finalizeSale(
@@ -457,13 +513,14 @@ public final class SellService {
             BuyerPayoutMode payoutMode,
             String periodKey
     ) {
-        finalizeSale(player, quote, returnStacks, true, delivery, onComplete, payoutMode, periodKey);
+        finalizeSale(player, quote, returnStacks, null, true, delivery, onComplete, payoutMode, periodKey);
     }
 
     private void finalizeSale(
             Player player,
             SellQuote quote,
             List<ItemStack> returnStacks,
+            Inventory restoreContainer,
             boolean restoreFailedItemsToPlayer,
             SaleDelivery delivery,
             Runnable onComplete,
@@ -479,7 +536,7 @@ public final class SellService {
             return;
         }
         if (!player.isOnline()) {
-            cancelFinalize(player, playerId, restoreFailedItemsToPlayer);
+            cancelFinalize(player, playerId, restoreContainer, restoreFailedItemsToPlayer);
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -487,7 +544,7 @@ public final class SellService {
         }
         if (!context.progressionService().isValidPayout(quote.totalMoney())) {
             debug.warn("sell payout rejected for " + player.getName() + " money=" + quote.totalMoney());
-            cancelFinalize(player, playerId, restoreFailedItemsToPlayer);
+            cancelFinalize(player, playerId, restoreContainer, restoreFailedItemsToPlayer);
             context.messageService().send(player, "sell.payout-limit");
             if (onComplete != null) {
                 onComplete.run();
@@ -497,7 +554,7 @@ public final class SellService {
         boolean paid = context.economyPayoutRouter().deposit(player, payoutMode, quote.totalMoney());
         if (!paid) {
             debug.warn("sell deposit failed for " + player.getName() + " money=" + quote.totalMoney());
-            cancelFinalize(player, playerId, restoreFailedItemsToPlayer);
+            cancelFinalize(player, playerId, restoreContainer, restoreFailedItemsToPlayer);
             context.messageService().send(player, "sell.failed");
             if (onComplete != null) {
                 onComplete.run();
@@ -506,17 +563,20 @@ public final class SellService {
         }
 
         Map<String, Double> categoryXpDelta = new HashMap<>();
+        if (context.config().awardPoints()) {
+            for (SellLine line : quote.lines()) {
+                Optional<SellableItemDefinition> definition = context.itemRegistry().byId(line.itemId());
+                definition.ifPresent(def ->
+                        context.progressionService().categoryXpDelta(def, line.totalPoints())
+                                .forEach((key, value) -> categoryXpDelta.merge(key, value, Double::sum))
+                );
+            }
+            context.playerProgressRepository().addPointsAndCategoryXp(playerId, quote.totalPoints(), categoryXpDelta)
+                    .thenRun(() -> context.playerProgressRepository().find(playerId).thenAccept(context::cacheProgress));
+        }
         for (SellLine line : quote.lines()) {
             context.marketService().recordSale(line.itemId(), line.amount());
-            Optional<SellableItemDefinition> definition = context.itemRegistry().byId(line.itemId());
-            definition.ifPresent(def ->
-                    context.progressionService().categoryXpDelta(def, line.totalPoints())
-                            .forEach((key, value) -> categoryXpDelta.merge(key, value, Double::sum))
-            );
         }
-
-        context.playerProgressRepository().addPointsAndCategoryXp(playerId, quote.totalPoints(), categoryXpDelta)
-                .thenRun(() -> context.playerProgressRepository().find(playerId).thenAccept(context::cacheProgress));
 
         context.saleLogRepository().enqueue(playerId, context.config().serverId(), quote.lines(), quote.totalMoney(), quote.totalPoints());
         context.buyerStatsService().recordSale(playerId, quote.totalMoney(), quote.totalPoints(), quote.lines().size());
@@ -524,7 +584,11 @@ public final class SellService {
         applySellLimitCache(playerId, periodKey, quote.lines());
 
         context.secureStorage().commitFinalize(playerId);
-        ItemReturner.returnItems(player, returnStacks);
+        if (restoreContainer != null) {
+            ItemReturner.returnToContainer(plugin, restoreContainer, returnStacks, player);
+        } else {
+            ItemReturner.returnItems(player, returnStacks);
+        }
         debug.log("sell OK " + player.getName() + " money=" + quote.totalMoney()
                 + " points=" + quote.totalPoints() + " lines=" + quote.lines().size());
 
@@ -541,16 +605,32 @@ public final class SellService {
         if (delivery == SaleDelivery.SILENT) {
             return;
         }
+        boolean awardPoints = context.config().awardPoints();
         String key = switch (delivery) {
-            case ACTION_BAR -> payoutMode == BuyerPayoutMode.PLAYER_POINTS
-                    ? "autosell.success-actionbar-playerpoints"
-                    : "autosell.success-actionbar";
-            case AUTOSell_CHAT -> payoutMode == BuyerPayoutMode.PLAYER_POINTS
-                    ? "autosell.success-playerpoints"
-                    : "autosell.success";
-            default -> payoutMode == BuyerPayoutMode.PLAYER_POINTS
-                    ? "sell.success-playerpoints"
-                    : "sell.success";
+            case ACTION_BAR -> {
+                if (payoutMode == BuyerPayoutMode.PLAYER_POINTS) {
+                    yield awardPoints
+                            ? "autosell.success-actionbar-playerpoints"
+                            : "autosell.success-actionbar-playerpoints-no-points";
+                }
+                yield awardPoints ? "autosell.success-actionbar" : "autosell.success-actionbar-no-points";
+            }
+            case AUTOSell_CHAT -> {
+                if (payoutMode == BuyerPayoutMode.PLAYER_POINTS) {
+                    yield awardPoints
+                            ? "autosell.success-playerpoints"
+                            : "autosell.success-playerpoints-no-points";
+                }
+                yield awardPoints ? "autosell.success" : "autosell.success-no-points";
+            }
+            default -> {
+                if (payoutMode == BuyerPayoutMode.PLAYER_POINTS) {
+                    yield awardPoints
+                            ? "sell.success-playerpoints"
+                            : "sell.success-playerpoints-no-points";
+                }
+                yield awardPoints ? "sell.success" : "sell.success-no-points";
+            }
         };
         String[] pairs = new String[]{
                 "count", String.valueOf(quote.lines().size()),
@@ -597,12 +677,12 @@ public final class SellService {
             return;
         }
         UUID playerId = player.getUniqueId();
-        context.playerProgressRepository().find(playerId).thenAccept(progress -> runMain(() -> {
+        context.playerProgressRepository().find(playerId).thenAccept(progress -> {
             context.cacheProgress(progress);
             if (onLoaded != null) {
-                onLoaded.run();
+                runFor(player, onLoaded);
             }
-        }));
+        });
     }
 
     public void ensureProgressLoaded(Player player, Runnable onReady) {
@@ -611,7 +691,7 @@ public final class SellService {
         }
         UUID playerId = player.getUniqueId();
         if (context.isProgressHydrated(playerId)) {
-            runMain(onReady);
+            runFor(player, onReady);
             return;
         }
         preloadProgress(player, onReady);
@@ -667,8 +747,8 @@ public final class SellService {
         }
     }
 
-    private void runMain(Runnable runnable) {
-        Bukkit.getScheduler().runTask(plugin, runnable);
+    private void runFor(Player player, Runnable runnable) {
+        PluginSchedulers.run(plugin, player, runnable);
     }
 
     private List<ItemStack> cloneStacks(List<ItemStack> stacks) {

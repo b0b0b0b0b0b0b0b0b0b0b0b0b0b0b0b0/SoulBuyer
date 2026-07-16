@@ -1,7 +1,6 @@
 package bm.b0b0b0.soulBuyer.gui;
 
-import bm.b0b0b0.soulBuyer.gui.BuyerMenuSession;
-import org.bukkit.Bukkit;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -20,7 +19,7 @@ public final class BuyerSubMenuNavigation {
         if (closingIntentionally || !player.isOnline()) {
             return;
         }
-        Bukkit.getScheduler().runTask(plugin, () -> navigation.openBuyer(player, session));
+        PluginSchedulers.runLater(plugin, player, () -> navigation.openBuyer(player, session), 1L);
     }
 
     public static void goBack(

@@ -14,21 +14,27 @@ import bm.b0b0b0.soulBuyer.model.ItemUnitQuote;
 import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.service.SellService;
 import bm.b0b0b0.soulBuyer.util.MaterialParser;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import bm.b0b0b0.soulBuyer.gui.BuyerGuiService;
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import bm.b0b0b0.soulBuyer.booster.BoosterDurationFormatter;
+import bm.b0b0b0.soulBuyer.booster.GlobalBoosterService;
+import bm.b0b0b0.soulBuyer.model.ActiveBooster;
+import bm.b0b0b0.soulBuyer.model.BoosterType;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.Optional;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -105,6 +111,17 @@ public final class SoulBuyerCommandRegistrar {
                 .then(Commands.literal("admin")
                         .requires(source -> source.getSender().hasPermission(permissionAdmin()))
                         .then(Commands.literal("reload").executes(this::reload))
+                        .then(Commands.literal("globalbooster")
+                                .then(Commands.literal("list").executes(this::globalBoosterList))
+                                .then(Commands.literal("clear")
+                                        .executes(this::globalBoosterClearAll)
+                                        .then(Commands.argument("type", StringArgumentType.word())
+                                                .executes(this::globalBoosterClearType)))
+                                .then(Commands.literal("activate")
+                                        .then(Commands.argument("offerId", StringArgumentType.word())
+                                                .executes(this::globalBoosterActivate)
+                                                .then(Commands.argument("seconds", IntegerArgumentType.integer(1))
+                                                        .executes(this::globalBoosterActivateWithDuration)))))
                         .then(Commands.literal("debug-tooltip")
                                 .executes(context -> debugTooltip(context, null))
                                 .then(Commands.literal("hand").executes(this::debugTooltipHand))
@@ -251,6 +268,99 @@ public final class SoulBuyerCommandRegistrar {
         return itemRegistry.all().stream().findFirst().orElse(null);
     }
 
+    private int globalBoosterList(CommandContext<CommandSourceStack> context) {
+        CommandSender sender = context.getSource().getSender();
+        if (!requireReady(sender)) {
+            return 0;
+        }
+        GlobalBoosterService global = runtime.boosterService().global();
+        if (!global.featureEnabled()) {
+            send(sender, "command.globalbooster-disabled");
+            return 0;
+        }
+        Map<BoosterType, ActiveBooster> active = global.snapshot().active();
+        if (active.isEmpty()) {
+            send(sender, "command.globalbooster-empty");
+            return Command.SINGLE_SUCCESS;
+        }
+        send(sender, "command.globalbooster-list-header");
+        for (Map.Entry<BoosterType, ActiveBooster> entry : active.entrySet()) {
+            long remaining = Math.max(0L, entry.getValue().expiresAtMillis() - System.currentTimeMillis());
+            send(sender, "command.globalbooster-list-line",
+                    "type", entry.getKey().name().toLowerCase(Locale.ROOT),
+                    "effect", String.valueOf(entry.getValue().effect()),
+                    "remaining", BoosterDurationFormatter.formatMillis(remaining));
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int globalBoosterActivate(CommandContext<CommandSourceStack> context) {
+        return activateGlobalBooster(context, null);
+    }
+
+    private int globalBoosterActivateWithDuration(CommandContext<CommandSourceStack> context) {
+        return activateGlobalBooster(context, (long) IntegerArgumentType.getInteger(context, "seconds"));
+    }
+
+    private int activateGlobalBooster(CommandContext<CommandSourceStack> context, Long durationSeconds) {
+        CommandSender sender = context.getSource().getSender();
+        if (!requireReady(sender)) {
+            return 0;
+        }
+        GlobalBoosterService global = runtime.boosterService().global();
+        if (!global.featureEnabled()) {
+            send(sender, "command.globalbooster-disabled");
+            return 0;
+        }
+        String offerId = StringArgumentType.getString(context, "offerId");
+        global.activate(offerId, durationSeconds).thenAccept(success -> PluginSchedulers.runGlobal(plugin, () -> {
+            if (!success) {
+                send(sender, "command.globalbooster-unknown-offer", "offer", offerId);
+                return;
+            }
+            send(sender, "command.globalbooster-activated", "offer", offerId);
+        }));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int globalBoosterClearAll(CommandContext<CommandSourceStack> context) {
+        CommandSender sender = context.getSource().getSender();
+        if (!requireReady(sender)) {
+            return 0;
+        }
+        GlobalBoosterService global = runtime.boosterService().global();
+        if (!global.featureEnabled()) {
+            send(sender, "command.globalbooster-disabled");
+            return 0;
+        }
+        global.clearAll().thenRun(() -> PluginSchedulers.runGlobal(plugin, () ->
+                send(sender, "command.globalbooster-cleared-all")
+        ));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int globalBoosterClearType(CommandContext<CommandSourceStack> context) {
+        CommandSender sender = context.getSource().getSender();
+        if (!requireReady(sender)) {
+            return 0;
+        }
+        GlobalBoosterService global = runtime.boosterService().global();
+        if (!global.featureEnabled()) {
+            send(sender, "command.globalbooster-disabled");
+            return 0;
+        }
+        String rawType = StringArgumentType.getString(context, "type");
+        BoosterType type = BoosterType.parse(rawType);
+        global.clear(type).thenAccept(removed -> PluginSchedulers.runGlobal(plugin, () -> {
+            if (!removed) {
+                send(sender, "command.globalbooster-clear-miss", "type", type.name().toLowerCase(Locale.ROOT));
+                return;
+            }
+            send(sender, "command.globalbooster-cleared-type", "type", type.name().toLowerCase(Locale.ROOT));
+        }));
+        return Command.SINGLE_SUCCESS;
+    }
+
     private int reload(CommandContext<CommandSourceStack> context) {
         CommandSender sender = context.getSource().getSender();
         ConfigurationLoader loader = configurationLoader;
@@ -258,7 +368,7 @@ public final class SoulBuyerCommandRegistrar {
             send(sender, "error.database");
             return 0;
         }
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        PluginSchedulers.runAsync(plugin, () -> {
             try {
                 PluginConfig reloaded = loader.reload(plugin, plugin.debug());
                 messageService.reloadAsync(plugin, () -> {
@@ -275,7 +385,7 @@ public final class SoulBuyerCommandRegistrar {
                 });
             } catch (Exception exception) {
                 plugin.debug().error("admin reload failed", exception);
-                Bukkit.getScheduler().runTask(plugin, () -> send(sender, "command.reload-failed"));
+                PluginSchedulers.runGlobal(plugin, () -> send(sender, "command.reload-failed"));
             }
         });
         return Command.SINGLE_SUCCESS;
@@ -304,6 +414,15 @@ public final class SoulBuyerCommandRegistrar {
         MessageService messages = messageService;
         if (messages != null) {
             messages.send(sender, key);
+            return;
+        }
+        sender.sendMessage(fallbackMessage(key));
+    }
+
+    private void send(CommandSender sender, String key, String... pairs) {
+        MessageService messages = messageService;
+        if (messages != null) {
+            messages.send(sender, key, pairs);
             return;
         }
         sender.sendMessage(fallbackMessage(key));

@@ -1,6 +1,7 @@
 package bm.b0b0b0.soulBuyer.message;
 
 import bm.b0b0b0.soulBuyer.integration.PlaceholderApiBridge;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -9,7 +10,6 @@ import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -156,10 +156,10 @@ public final class MessageService {
     }
 
     public void reloadAsync(JavaPlugin plugin, Runnable onComplete) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        PluginSchedulers.runAsync(plugin, () -> {
             loader.load();
             if (onComplete != null) {
-                Bukkit.getScheduler().runTask(plugin, onComplete);
+                PluginSchedulers.runGlobal(plugin, onComplete);
             }
         });
     }

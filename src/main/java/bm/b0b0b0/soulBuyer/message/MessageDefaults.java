@@ -49,6 +49,7 @@ public final class MessageDefaults {
         messages.put("sell.in-progress", "&#FFAA00Продажа уже выполняется...");
         messages.put("sell.empty", "&#FF5555Нет предметов для продажи.");
         messages.put("sell.success", "&#55FF55Продано &#FFFFFF{count} &#55FF55поз. на &#FFFFFF{money} &#55FF55монет (+&#FFFFFF{points} &#55FF55очков)");
+        messages.put("sell.success-no-points", "&#55FF55Продано &#FFFFFF{count} &#55FF55поз. на &#FFFFFF{money} &#55FF55монет");
         messages.put("sell.partial", "&#FFAA00Часть предметов не скупается и возвращена.");
         messages.put("sell.failed", "&#FF5555Ошибка продажи. Предметы возвращены.");
         messages.put("sell.returned", "&#FFAA00Непроданные предметы возвращены.");
@@ -58,6 +59,15 @@ public final class MessageDefaults {
         messages.put("command.player-only", "&#FF5555Только для игроков.");
         messages.put("command.reload-success", "&#55FF55SoulBuyer перезагружен.");
         messages.put("command.reload-failed", "&#FF5555Ошибка перезагрузки SoulBuyer.");
+        messages.put("command.globalbooster-disabled", "&#FF5555Глобальные бустеры отключены.");
+        messages.put("command.globalbooster-empty", "&#AAAAAAАктивных глобальных бустеров нет.");
+        messages.put("command.globalbooster-list-header", "&#FCD34DГлобальные бустеры:");
+        messages.put("command.globalbooster-list-line", "&#E9D5FF{type} &#AAAAAAэффект &#FFFFFF{effect} &#AAAAAAосталось &#FFFFFF{remaining}");
+        messages.put("command.globalbooster-activated", "&#86EFACГлобальный бустер &#E9D5FF{offer} &#86EFACвключён.");
+        messages.put("command.globalbooster-unknown-offer", "&#FF5555Оффер &#E9D5FF{offer} &#FF5555не найден.");
+        messages.put("command.globalbooster-cleared-all", "&#86EFACВсе глобальные бустеры сняты.");
+        messages.put("command.globalbooster-cleared-type", "&#86EFACГлобальный бустер &#E9D5FF{type} &#86EFACснят.");
+        messages.put("command.globalbooster-clear-miss", "&#AAAAAAГлобальный бустер &#E9D5FF{type} &#AAAAAAне активен.");
         messages.put("error.database", "&#FF5555SoulBuyer ещё загружается, подождите...");
 
         return messages;
@@ -103,6 +113,7 @@ public final class MessageDefaults {
         messages.put("sell.in-progress", "&#FFAA00Sale already in progress...");
         messages.put("sell.empty", "&#FF5555No items to sell.");
         messages.put("sell.success", "&#55FF55Sold &#FFFFFF{count} &#55FF55stacks for &#FFFFFF{money} &#55FF55coins (+&#FFFFFF{points} &#55FF55points)");
+        messages.put("sell.success-no-points", "&#55FF55Sold &#FFFFFF{count} &#55FF55stacks for &#FFFFFF{money} &#55FF55coins");
         messages.put("sell.partial", "&#FFAA00Some items were returned — not sellable.");
         messages.put("sell.failed", "&#FF5555Sale failed. Items returned.");
         messages.put("sell.returned", "&#FFAA00Unsold items returned.");
@@ -112,6 +123,15 @@ public final class MessageDefaults {
         messages.put("command.player-only", "&#FF5555Players only.");
         messages.put("command.reload-success", "&#55FF55SoulBuyer reloaded.");
         messages.put("command.reload-failed", "&#FF5555SoulBuyer reload failed.");
+        messages.put("command.globalbooster-disabled", "&#FF5555Global boosters are disabled.");
+        messages.put("command.globalbooster-empty", "&#AAAAAANo active global boosters.");
+        messages.put("command.globalbooster-list-header", "&#FCD34DGlobal boosters:");
+        messages.put("command.globalbooster-list-line", "&#E9D5FF{type} &#AAAAAAeffect &#FFFFFF{effect} &#AAAAAAleft &#FFFFFF{remaining}");
+        messages.put("command.globalbooster-activated", "&#86EFACGlobal booster &#E9D5FF{offer} &#86EFACenabled.");
+        messages.put("command.globalbooster-unknown-offer", "&#FF5555Offer &#E9D5FF{offer} &#FF5555not found.");
+        messages.put("command.globalbooster-cleared-all", "&#86EFACAll global boosters cleared.");
+        messages.put("command.globalbooster-cleared-type", "&#86EFACGlobal booster &#E9D5FF{type} &#86EFACcleared.");
+        messages.put("command.globalbooster-clear-miss", "&#AAAAAAGlobal booster &#E9D5FF{type} &#AAAAAAis not active.");
         messages.put("error.database", "&#FF5555SoulBuyer is still loading, please wait...");
 
         return messages;

@@ -224,9 +224,13 @@ boosters:
 autosell:
   no-permission: "&#FF5555Autosell is a donator feature."
   success: "&#86EFACAutosell: &#E9D5FF{money} &#86EFAC(+&#E9D5FF{points} &#86EFACpoints)"
+  success-no-points: "&#86EFACAutosell: &#E9D5FF{money}"
   success-playerpoints: "&#86EFACAutosell: &#FCD34D{money} &#86EFACpoints (+&#E9D5FF{points} &#86EFACpts)"
+  success-playerpoints-no-points: "&#86EFACAutosell: &#FCD34D{money} &#86EFACpoints"
   success-actionbar: "&#86EFAC+&#E9D5FF{money} &#86EFAC· +&#E9D5FF{points} &#86EFACpts"
+  success-actionbar-no-points: "&#86EFAC+&#E9D5FF{money}"
   success-actionbar-playerpoints: "&#86EFAC+&#FCD34D{money} &#86EFACpts · +&#E9D5FF{points} &#86EFACpts"
+  success-actionbar-playerpoints-no-points: "&#86EFAC+&#FCD34D{money} &#86EFACpts"
 
 sell:
   not-sellable: "&#FF5555{item} is not accepted."
@@ -234,7 +238,9 @@ sell:
   empty: "&#FF5555No items to sell."
   limit-reached: "&#FF5555Daily sell limit for this item is reached."
   success: "&#86EFACSold &#E9D5FF{count} &#86EFACstacks for &#E9D5FF{money} &#86EFACcoins (+&#E9D5FF{points} &#86EFACpoints)"
+  success-no-points: "&#86EFACSold &#E9D5FF{count} &#86EFACstacks for &#E9D5FF{money} &#86EFACcoins"
   success-playerpoints: "&#86EFACSold &#E9D5FF{count} &#86EFACstacks for &#FCD34D{money} &#86EFACpoints (+&#E9D5FF{points} &#86EFACpts)"
+  success-playerpoints-no-points: "&#86EFACSold &#E9D5FF{count} &#86EFACstacks for &#FCD34D{money} &#86EFACpoints"
   partial: "&#D8B4FESome items were returned — not sellable."
   failed: "&#FF5555Sale failed. Items returned."
   payout-limit: "&#FF5555Payout amount too large. Contact staff."
@@ -248,6 +254,15 @@ command:
   donate-disabled: "&#FF5555Donate buyer is disabled on this server."
   reload-success: "&#86EFACSoulBuyer reloaded."
   reload-failed: "&#FF5555SoulBuyer reload failed."
+  globalbooster-disabled: "&#FF5555Global boosters are disabled."
+  globalbooster-empty: "&#AAAAAANo active global boosters."
+  globalbooster-list-header: "&#FCD34DGlobal boosters:"
+  globalbooster-list-line: "&#E9D5FF{type} &#AAAAAAeffect &#FFFFFF{effect} &#AAAAAAleft &#FFFFFF{remaining}"
+  globalbooster-activated: "&#86EFACGlobal booster &#E9D5FF{offer} &#86EFACenabled."
+  globalbooster-unknown-offer: "&#FF5555Offer &#E9D5FF{offer} &#FF5555not found."
+  globalbooster-cleared-all: "&#86EFACAll global boosters cleared."
+  globalbooster-cleared-type: "&#86EFACGlobal booster &#E9D5FF{type} &#86EFACcleared."
+  globalbooster-clear-miss: "&#AAAAAAGlobal booster &#E9D5FF{type} &#AAAAAAis not active."
 
 error:
   database: "&#FF5555SoulBuyer is still loading, please wait..."

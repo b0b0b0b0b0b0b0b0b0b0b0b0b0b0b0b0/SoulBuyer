@@ -7,8 +7,9 @@ import bm.b0b0b0.soulBuyer.item.ItemRegistry;
 import bm.b0b0b0.soulBuyer.market.MarketService;
 import bm.b0b0b0.soulBuyer.message.MessageService;
 import bm.b0b0b0.soulBuyer.model.CatalogRotationState;
-import bm.b0b0b0.soulBuyer.model.SellableItemDefinition;
 import bm.b0b0b0.soulBuyer.repository.CatalogRotationRepository;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,7 +17,6 @@ import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 
 public final class CatalogRotationService {
 
@@ -28,7 +28,7 @@ public final class CatalogRotationService {
     private final SoulBuyerDebugLog debug;
 
     private volatile PluginConfig config;
-    private BukkitTask scheduledTask;
+    private ScheduledTask scheduledTask;
     private volatile long nextRotationAtMs;
 
     public CatalogRotationService(
@@ -51,7 +51,7 @@ public final class CatalogRotationService {
 
     public void start() {
         repository.load().thenAccept(state ->
-                Bukkit.getScheduler().runTask(plugin, () -> bootstrap(state))
+                PluginSchedulers.runGlobal(plugin, () -> bootstrap(state))
         );
     }
 
@@ -60,9 +60,10 @@ public final class CatalogRotationService {
         cancelSchedule();
         if (!config.catalogRotation().enabled) {
             itemRegistry.activateAll();
+            refreshOpenMenus();
             return;
         }
-        repository.load().thenAccept(state -> Bukkit.getScheduler().runTask(plugin, () -> {
+        repository.load().thenAccept(state -> PluginSchedulers.runGlobal(plugin, () -> {
             Set<String> activeIds = resolveActiveIds(state);
             applyActiveIds(activeIds, false, false);
             long now = System.currentTimeMillis();
@@ -183,7 +184,7 @@ public final class CatalogRotationService {
         cancelSchedule();
         long delayMs = Math.max(1000L, targetAtMs - System.currentTimeMillis());
         long delayTicks = Math.max(1L, delayMs / 50L);
-        scheduledTask = Bukkit.getScheduler().runTaskLater(plugin, () -> rotate(true), delayTicks);
+        scheduledTask = PluginSchedulers.runGlobalLater(plugin, () -> rotate(true), delayTicks);
     }
 
     private void cancelSchedule() {
@@ -199,19 +200,24 @@ public final class CatalogRotationService {
 
     private void broadcastRotation(int count) {
         String permission = config.permissionUse();
+        String countText = String.valueOf(count);
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!player.hasPermission(permission)) {
-                continue;
-            }
-            messageService.send(player, "rotation.announce", "count", String.valueOf(count));
+            PluginSchedulers.run(plugin, player, () -> {
+                if (!player.hasPermission(permission)) {
+                    return;
+                }
+                messageService.send(player, "rotation.announce", "count", countText);
+            });
         }
     }
 
     private void refreshOpenMenus() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getOpenInventory().getTopInventory().getHolder(false) instanceof BuyerMenu menu) {
-                menu.refresh();
-            }
+            PluginSchedulers.run(plugin, player, () -> {
+                if (player.getOpenInventory().getTopInventory().getHolder(false) instanceof BuyerMenu menu) {
+                    menu.refresh();
+                }
+            });
         }
     }
 }

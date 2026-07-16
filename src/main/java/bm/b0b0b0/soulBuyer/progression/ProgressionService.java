@@ -43,6 +43,9 @@ public final class ProgressionService {
     }
 
     public double pointsForSale(SellableItemDefinition definition, int amount, double unitPriceBasis) {
+        if (!config.awardPoints()) {
+            return 0.0D;
+        }
         double basis = sanitizeUnit(unitPriceBasis);
         double basePoints = definition.basePoints() * amount;
         if (config.progression().pointsPerCurrency <= 0.0D) {

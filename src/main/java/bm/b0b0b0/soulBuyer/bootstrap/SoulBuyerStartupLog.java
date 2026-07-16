@@ -11,7 +11,9 @@ public final class SoulBuyerStartupLog {
     private static final String RED = "\u001B[31m";
     private static final String YELLOW = "\u001B[33m";
     private static final String GRAY = "\u001B[90m";
+    private static final String CYAN = "\u001B[36m";
     private static final String RESET = "\u001B[0m";
+    private static final boolean FOLIA = detectFolia();
 
     private final ConsoleCommandSender console;
 
@@ -23,12 +25,22 @@ public final class SoulBuyerStartupLog {
         console.sendMessage(" ");
         console.sendMessage(PREFIX + "==============================");
         console.sendMessage(PREFIX + "Version:" + GRAY + " " + version + " " + RESET + "| Author:" + GRAY + " b0b0b0" + RESET);
+        if (FOLIA) {
+            console.sendMessage(PREFIX + CYAN + "Folia" + RESET + GRAY + " · region threads · entity/global/async" + RESET);
+        } else {
+            console.sendMessage(PREFIX + GRAY + "Paper · Folia-ready (region schedulers)" + RESET);
+        }
         console.sendMessage(PREFIX + " ");
         console.sendMessage(PREFIX + " Инициализация:");
     }
 
     public void bannerSuccess() {
-        console.sendMessage(PREFIX + GREEN + "SoulBuyer успешно загружен" + RESET);
+        if (FOLIA) {
+            console.sendMessage(PREFIX + GREEN + "SoulBuyer успешно загружен" + RESET
+                    + GRAY + " · " + RESET + CYAN + "Folia OK" + RESET);
+        } else {
+            console.sendMessage(PREFIX + GREEN + "SoulBuyer успешно загружен" + RESET);
+        }
         console.sendMessage(PREFIX + "==============================");
         console.sendMessage(" ");
     }
@@ -41,6 +53,14 @@ public final class SoulBuyerStartupLog {
 
     public void bannerFailure(String reason) {
         abort(reason);
+    }
+
+    public void stepSchedulers() {
+        if (FOLIA) {
+            stepOk("Schedulers — Folia region threads");
+            return;
+        }
+        stepOk("Schedulers — Paper Folia-ready API");
     }
 
     public void info(String message) {
@@ -65,5 +85,14 @@ public final class SoulBuyerStartupLog {
 
     public void unload() {
         console.sendMessage(PREFIX + GRAY + "SoulBuyer выгружен" + RESET);
+    }
+
+    private static boolean detectFolia() {
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            return true;
+        } catch (ClassNotFoundException ignored) {
+            return false;
+        }
     }
 }

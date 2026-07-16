@@ -224,9 +224,13 @@ boosters:
 autosell:
   no-permission: "&#FF5555Автопродажа доступна донатерам."
   success: "&#86EFACАвтопродажа: &#E9D5FF{money} &#86EFAC(+&#E9D5FF{points} &#86EFACочков)"
+  success-no-points: "&#86EFACАвтопродажа: &#E9D5FF{money}"
   success-playerpoints: "&#86EFACАвтопродажа: &#FCD34D{money} &#86EFACпоинтов (+&#E9D5FF{points} &#86EFACочков)"
+  success-playerpoints-no-points: "&#86EFACАвтопродажа: &#FCD34D{money} &#86EFACпоинтов"
   success-actionbar: "&#86EFAC+&#E9D5FF{money} &#86EFAC· +&#E9D5FF{points} &#86EFACочков"
+  success-actionbar-no-points: "&#86EFAC+&#E9D5FF{money}"
   success-actionbar-playerpoints: "&#86EFAC+&#FCD34D{money} &#86EFACпоинтов · +&#E9D5FF{points} &#86EFACочков"
+  success-actionbar-playerpoints-no-points: "&#86EFAC+&#FCD34D{money} &#86EFACпоинтов"
 
 sell:
   not-sellable: "&#FF5555{item} не скупается."
@@ -234,7 +238,9 @@ sell:
   empty: "&#FF5555Нет предметов для продажи."
   limit-reached: "&#FF5555Дневной лимит продажи этого ресурса исчерпан."
   success: "&#86EFACПродано &#E9D5FF{count} &#86EFACпоз. на &#E9D5FF{money} &#86EFACмонет (+&#E9D5FF{points} &#86EFACочков)"
+  success-no-points: "&#86EFACПродано &#E9D5FF{count} &#86EFACпоз. на &#E9D5FF{money} &#86EFACмонет"
   success-playerpoints: "&#86EFACПродано &#E9D5FF{count} &#86EFACпоз. на &#FCD34D{money} &#86EFACпоинтов (+&#E9D5FF{points} &#86EFACочков)"
+  success-playerpoints-no-points: "&#86EFACПродано &#E9D5FF{count} &#86EFACпоз. на &#FCD34D{money} &#86EFACпоинтов"
   partial: "&#D8B4FEЧасть предметов не скупается и возвращена."
   failed: "&#FF5555Ошибка продажи. Предметы возвращены."
   payout-limit: "&#FF5555Сумма продажи слишком большая. Обратитесь к администрации."
@@ -248,6 +254,15 @@ command:
   donate-disabled: "&#FF5555Донатный скупщик отключён на этом сервере."
   reload-success: "&#86EFACSoulBuyer перезагружен."
   reload-failed: "&#FF5555Ошибка перезагрузки SoulBuyer."
+  globalbooster-disabled: "&#FF5555Глобальные бустеры отключены."
+  globalbooster-empty: "&#AAAAAAАктивных глобальных бустеров нет."
+  globalbooster-list-header: "&#FCD34DГлобальные бустеры:"
+  globalbooster-list-line: "&#E9D5FF{type} &#AAAAAAэффект &#FFFFFF{effect} &#AAAAAAосталось &#FFFFFF{remaining}"
+  globalbooster-activated: "&#86EFACГлобальный бустер &#E9D5FF{offer} &#86EFACвключён."
+  globalbooster-unknown-offer: "&#FF5555Оффер &#E9D5FF{offer} &#FF5555не найден."
+  globalbooster-cleared-all: "&#86EFACВсе глобальные бустеры сняты."
+  globalbooster-cleared-type: "&#86EFACГлобальный бустер &#E9D5FF{type} &#86EFACснят."
+  globalbooster-clear-miss: "&#AAAAAAГлобальный бустер &#E9D5FF{type} &#AAAAAAне активен."
 
 error:
   database: "&#FF5555SoulBuyer ещё загружается, подождите..."

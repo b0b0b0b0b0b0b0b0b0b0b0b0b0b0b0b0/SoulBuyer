@@ -85,6 +85,13 @@ public final class SchemaMigration {
                         updated_at BIGINT NOT NULL DEFAULT 0
                     )
                     """);
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS soulbuyer_global_boosters (
+                        id TINYINT PRIMARY KEY,
+                        state TEXT NOT NULL,
+                        updated_at BIGINT NOT NULL DEFAULT 0
+                    )
+                    """);
             if (sqlite) {
                 statement.execute("INSERT OR IGNORE INTO soulbuyer_schema (version) VALUES (2)");
             } else {

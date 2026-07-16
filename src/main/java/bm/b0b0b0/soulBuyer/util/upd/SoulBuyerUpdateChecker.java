@@ -1,6 +1,6 @@
 package bm.b0b0b0.soulBuyer.util.upd;
 
-import org.bukkit.Bukkit;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.BufferedReader;
@@ -21,7 +21,7 @@ public final class SoulBuyerUpdateChecker {
     }
 
     public static void schedule(JavaPlugin plugin, String currentVersion) {
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> check(currentVersion), 60L);
+        PluginSchedulers.runAsyncLater(plugin, () -> check(currentVersion), 60L);
     }
 
     public static void check(String currentVersion) {

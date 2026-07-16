@@ -3,11 +3,12 @@ package bm.b0b0b0.soulBuyer.market;
 import bm.b0b0b0.soulBuyer.config.PluginConfig;
 import bm.b0b0b0.soulBuyer.repository.MarketRepository;
 import bm.b0b0b0.soulBuyer.sync.RedisBootstrap;
+import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 
 public final class MarketService {
 
@@ -16,7 +17,7 @@ public final class MarketService {
     private final RedisBootstrap redisBootstrap;
     private final Map<String, Double> coefficients = new ConcurrentHashMap<>();
     private volatile boolean marketReady;
-    private BukkitTask decayTask;
+    private ScheduledTask decayTask;
 
     public MarketService(
             JavaPlugin plugin,
@@ -86,12 +87,8 @@ public final class MarketService {
 
     private void startTasks(JavaPlugin plugin) {
         int decaySeconds = Math.max(30, config.market().decayIntervalSeconds);
-        decayTask = plugin.getServer().getScheduler().runTaskTimerAsynchronously(
-                plugin,
-                this::runDecay,
-                decaySeconds * 20L,
-                decaySeconds * 20L
-        );
+        long periodTicks = decaySeconds * 20L;
+        decayTask = PluginSchedulers.runAsyncTimer(plugin, this::runDecay, periodTicks, periodTicks);
     }
 
     private void runDecay() {

@@ -98,12 +98,12 @@ public final class BuyerBoostersMenu implements SoulBuyerGuiHolder {
             return;
         }
         purchasing = true;
-        boosterService.purchase(player, offerId, () -> Bukkit.getScheduler().runTask(plugin, () -> {
+        boosterService.purchase(player, offerId, () -> {
             purchasing = false;
             if (player.getOpenInventory().getTopInventory().getHolder(false) instanceof BuyerBoostersMenu) {
                 render();
             }
-        }));
+        });
     }
 
     private void render() {
@@ -139,12 +139,17 @@ public final class BuyerBoostersMenu implements SoulBuyerGuiHolder {
             }
             BoosterType type = BoosterType.parse(offer.type);
             long remaining = boosterService.remainingMillis(player, type);
+            long globalRemaining = boosterService.global().remainingMillis(type);
             String[] pairs = new String[]{
                     "price", formatPrice(offer.price),
                     "duration", BoosterDurationFormatter.format(offer.durationSeconds),
                     "effect", formatEffect(offer),
                     "remaining", BoosterDurationFormatter.formatMillis(remaining),
+                    "global_remaining", BoosterDurationFormatter.formatMillis(globalRemaining),
                     "active_state", messageService.raw(player, remaining > 0L
+                            ? "gui.boosters.active-yes"
+                            : "gui.boosters.active-no"),
+                    "global_active_state", messageService.raw(player, globalRemaining > 0L
                             ? "gui.boosters.active-yes"
                             : "gui.boosters.active-no")
             };

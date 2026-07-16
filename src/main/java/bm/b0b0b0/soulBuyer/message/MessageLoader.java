@@ -21,7 +21,7 @@ public final class MessageLoader {
     private final JavaPlugin plugin;
     private final String defaultLocale;
     private final String fallbackLocale;
-    private final Map<String, Map<String, Object>> locales = new LinkedHashMap<>();
+    private volatile Map<String, Map<String, Object>> locales = Map.of();
 
     public MessageLoader(JavaPlugin plugin, String defaultLocale, String fallbackLocale) {
         this.plugin = plugin;
@@ -29,13 +29,14 @@ public final class MessageLoader {
         this.fallbackLocale = fallbackLocale;
     }
 
-    public synchronized void load() {
-        locales.clear();
+    public void load() {
+        Map<String, Map<String, Object>> next = new LinkedHashMap<>();
         for (String locale : KNOWN_LOCALES) {
             ensureLocaleFile(locale);
             syncBundledLocale(locale);
-            loadLocale(locale);
+            next.put(locale, loadLocaleMap(locale));
         }
+        locales = Map.copyOf(next);
     }
 
     public String defaultLocale() {
@@ -148,13 +149,13 @@ public final class MessageLoader {
         return MessageDefaults.ru();
     }
 
-    private void loadLocale(String locale) {
+    private Map<String, Object> loadLocaleMap(String locale) {
         Path path = langPath(locale);
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(path.toFile());
         Map<String, Object> flat = new LinkedHashMap<>();
         flatten("", yaml, flat);
         mergeMissing(flat, defaultsFor(locale));
-        locales.put(locale, flat);
+        return Map.copyOf(flat);
     }
 
     private void mergeMissing(Map<String, Object> target, Map<String, Object> defaults) {
@@ -194,20 +195,22 @@ public final class MessageLoader {
     }
 
     public boolean containsKey(String locale, String key) {
-        Map<String, Object> primary = locales.get(locale);
+        Map<String, Map<String, Object>> snapshot = locales;
+        Map<String, Object> primary = snapshot.get(locale);
         if (primary != null && primary.containsKey(key)) {
             return true;
         }
-        Map<String, Object> fallback = locales.get(fallbackLocale);
+        Map<String, Object> fallback = snapshot.get(fallbackLocale);
         return fallback != null && fallback.containsKey(key);
     }
 
     private Object resolve(String locale, String key) {
-        Map<String, Object> primary = locales.get(locale);
+        Map<String, Map<String, Object>> snapshot = locales;
+        Map<String, Object> primary = snapshot.get(locale);
         if (primary != null && primary.containsKey(key)) {
             return primary.get(key);
         }
-        Map<String, Object> fallback = locales.get(fallbackLocale);
+        Map<String, Object> fallback = snapshot.get(fallbackLocale);
         if (fallback != null && fallback.containsKey(key)) {
             return fallback.get(key);
         }

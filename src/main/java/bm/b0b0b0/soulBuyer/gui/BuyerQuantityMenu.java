@@ -149,14 +149,13 @@ public final class BuyerQuantityMenu implements SoulBuyerGuiHolder {
                 itemId,
                 selectedAmount,
                 SaleDelivery.CHAT,
-                () ->
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                () -> {
                     processing = false;
                     closingIntentionally = true;
                     if (player.isOnline()) {
                         navigation.openBuyer(player, parentSession);
                     }
-                }),
+                },
                 parentSession.payoutMode()
         );
     }
@@ -166,15 +165,13 @@ public final class BuyerQuantityMenu implements SoulBuyerGuiHolder {
             return;
         }
         processing = true;
-        sellService.sellItemFromInventory(player, itemId, parentSession.payoutMode(), () ->
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    processing = false;
-                    closingIntentionally = true;
-                    if (player.isOnline()) {
-                        navigation.openBuyer(player, parentSession);
-                    }
-                })
-        );
+        sellService.sellItemFromInventory(player, itemId, parentSession.payoutMode(), () -> {
+            processing = false;
+            closingIntentionally = true;
+            if (player.isOnline()) {
+                navigation.openBuyer(player, parentSession);
+            }
+        });
     }
 
     private void adjustAmount(int delta) {

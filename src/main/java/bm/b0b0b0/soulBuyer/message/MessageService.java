@@ -52,7 +52,20 @@ public final class MessageService {
     public Component component(String locale, String key, String... pairs) {
         String prefix = loader.raw(locale, "prefix");
         String body = HexColorParser.replacePlaceholders(loader.raw(locale, key), pairs);
-        return HexColorParser.parse(prefix).append(HexColorParser.parse(body));
+        String[] lines = body.split("\\n", -1);
+        if (lines.length <= 1) {
+            return HexColorParser.parse(prefix).append(HexColorParser.parse(body));
+        }
+        Component result = Component.empty();
+        for (int index = 0; index < lines.length; index++) {
+            if (index > 0) {
+                result = result.append(Component.newline());
+            }
+            result = result
+                    .append(HexColorParser.parse(prefix))
+                    .append(HexColorParser.parse(lines[index]));
+        }
+        return result;
     }
 
     public Component guiText(Player player, String key, String... pairs) {

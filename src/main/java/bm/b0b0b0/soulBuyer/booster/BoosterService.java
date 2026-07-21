@@ -13,6 +13,7 @@ import bm.b0b0b0.soulBuyer.repository.PlayerBoosterRepository;
 import bm.b0b0b0.soulBuyer.repository.PlayerProgressRepository;
 import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -168,23 +169,61 @@ public final class BoosterService {
             boolean success,
             SoulBuyerSettings.BoosterOfferSettings offer
     ) {
+        if (!success && offer != null) {
+            BoosterCurrency currency = currency();
+            resolveBalance(player, currency).thenAccept(balance -> PluginSchedulers.run(plugin, player, () -> {
+                if (player.isOnline()) {
+                    sendInsufficient(player, offer, currency, balance);
+                }
+                if (onComplete != null) {
+                    onComplete.run();
+                }
+            }));
+            return;
+        }
         PluginSchedulers.run(plugin, player, () -> {
-            if (player.isOnline()) {
-                if (success && offer != null) {
-                    messageService.send(player, "boosters.purchased", new String[]{
-                            "offer", messageService.guiRaw(player, offer.nameKey)
-                    });
-                    if (currency() == BoosterCurrency.PROGRESSION_POINTS && progressCacheRefresher != null) {
-                        progressCacheRefresher.accept(player.getUniqueId());
-                    }
-                } else if (!success && offer != null) {
-                    messageService.send(player, insufficientKey(currency()));
+            if (player.isOnline() && success && offer != null) {
+                messageService.send(player, "boosters.purchased",
+                        "offer", messageService.guiRaw(player, offer.nameKey));
+                if (currency() == BoosterCurrency.PROGRESSION_POINTS && progressCacheRefresher != null) {
+                    progressCacheRefresher.accept(player.getUniqueId());
                 }
             }
             if (onComplete != null) {
                 onComplete.run();
             }
         });
+    }
+
+    private void sendInsufficient(
+            Player player,
+            SoulBuyerSettings.BoosterOfferSettings offer,
+            BoosterCurrency currency,
+            double balance
+    ) {
+        double price = Math.max(0.0D, offer.price);
+        double need = Math.max(0.0D, price - Math.max(0.0D, balance));
+        messageService.send(player, insufficientKey(currency),
+                "offer", messageService.guiRaw(player, offer.nameKey),
+                "price", formatAmount(price),
+                "balance", formatAmount(balance),
+                "need", formatAmount(need));
+    }
+
+    private CompletableFuture<Double> resolveBalance(Player player, BoosterCurrency currency) {
+        return switch (currency) {
+            case PROGRESSION_POINTS -> progressRepository.find(player.getUniqueId())
+                    .thenApply(progress -> progress == null ? 0.0D : progress.points());
+            case VAULT -> CompletableFuture.completedFuture(vaultEconomyHook.balance(player));
+            case PLAYER_POINTS -> CompletableFuture.completedFuture(playerPointsEconomyHook.balance(player));
+        };
+    }
+
+    private static String formatAmount(double value) {
+        if (Math.abs(value - Math.rint(value)) < 0.001D) {
+            return String.format(Locale.US, "%.0f", value);
+        }
+        return String.format(Locale.US, "%.2f", value);
     }
 
     private PlayerBoosterState cached(UUID playerId) {

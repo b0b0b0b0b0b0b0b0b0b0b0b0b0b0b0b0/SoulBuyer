@@ -23,6 +23,7 @@ public final class VaultEconomyHook {
     private Method depositPlayer;
     private Method withdrawPlayer;
     private Method has;
+    private Method getBalance;
     private Method getName;
     private Method transactionSuccess;
 
@@ -88,6 +89,18 @@ public final class VaultEconomyHook {
         }
     }
 
+    public double balance(OfflinePlayer player) {
+        if (economy == null || getBalance == null) {
+            return 0.0D;
+        }
+        try {
+            Object balance = getBalance.invoke(economy, player);
+            return balance instanceof Number number ? number.doubleValue() : 0.0D;
+        } catch (ReflectiveOperationException exception) {
+            return 0.0D;
+        }
+    }
+
     public boolean has(OfflinePlayer player, double amount) {
         if (economy == null || has == null) {
             return false;
@@ -135,6 +148,7 @@ public final class VaultEconomyHook {
             depositPlayer = findMethod(economyClass, "depositPlayer", OfflinePlayer.class, double.class);
             withdrawPlayer = findMethod(economyClass, "withdrawPlayer", OfflinePlayer.class, double.class);
             has = findMethod(economyClass, "has", OfflinePlayer.class, double.class);
+            getBalance = findMethod(economyClass, "getBalance", OfflinePlayer.class);
             getName = findMethod(economyClass, "getName");
             if (depositPlayer == null || withdrawPlayer == null) {
                 return false;

@@ -94,17 +94,20 @@ public final class PlayerPointsEconomyHook {
         }
     }
 
-    public boolean has(OfflinePlayer player, double amount) {
+    public double balance(OfflinePlayer player) {
         if (api == null || look == null) {
-            return false;
+            return 0.0D;
         }
-        int points = (int) Math.ceil(amount);
         try {
             Object balance = look.invoke(api, player.getUniqueId());
-            return balance instanceof Number number && number.intValue() >= points;
+            return balance instanceof Number number ? number.doubleValue() : 0.0D;
         } catch (ReflectiveOperationException exception) {
-            return false;
+            return 0.0D;
         }
+    }
+
+    public boolean has(OfflinePlayer player, double amount) {
+        return balance(player) >= Math.ceil(amount);
     }
 
     public boolean withdraw(OfflinePlayer player, double amount) {

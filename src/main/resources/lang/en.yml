@@ -217,9 +217,9 @@ gui:
 boosters:
   no-permission: "&#FF5555Boosters are unavailable."
   purchased: "&#86EFACActivated: {offer}"
-  insufficient-points: "&#FF5555Not enough SoulBuyer points."
-  insufficient-vault: "&#FF5555Not enough coins."
-  insufficient-playerpoints: "&#FF5555Not enough PlayerPoints."
+  insufficient-points: "&#FF5555Need &#E9D5FF{need} &#FF5555more SoulBuyer points for &#E9D5FF{offer}&#FF5555.\n&#9CA3AFCost &#FFFFFF{price} &#9CA3AF· you have &#FFFFFF{balance}"
+  insufficient-vault: "&#FF5555Need &#FCD34D{need} &#FF5555more coins for &#E9D5FF{offer}&#FF5555.\n&#9CA3AFCost &#FFFFFF{price} &#9CA3AF· you have &#FFFFFF{balance}"
+  insufficient-playerpoints: "&#FF5555Need &#FCD34D{need} &#FF5555more PlayerPoints for &#E9D5FF{offer}&#FF5555.\n&#9CA3AFCost &#FFFFFF{price} &#9CA3AF· you have &#FFFFFF{balance}"
 
 autosell:
   no-permission: "&#FF5555Autosell is a donator feature."

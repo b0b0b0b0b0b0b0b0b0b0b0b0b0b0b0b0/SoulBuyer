@@ -45,6 +45,10 @@ public final class MessageDefaults {
         messages.put("gui.buyer.close", "&#FF5555Закрыть");
         messages.put("gui.buyer.close-lore", List.of("&#AAAAAAВернуть предметы"));
 
+        messages.put("boosters.insufficient-points", "&#FF5555Не хватает &#E9D5FF{need} &#FF5555очков SoulBuyer на &#E9D5FF{offer}&#FF5555.\n&#9CA3AFНужно &#FFFFFF{price} &#9CA3AF· у вас &#FFFFFF{balance}");
+        messages.put("boosters.insufficient-vault", "&#FF5555Не хватает &#FCD34D{need} &#FF5555монет на &#E9D5FF{offer}&#FF5555.\n&#9CA3AFНужно &#FFFFFF{price} &#9CA3AF· у вас &#FFFFFF{balance}");
+        messages.put("boosters.insufficient-playerpoints", "&#FF5555Не хватает &#FCD34D{need} &#FF5555PlayerPoints на &#E9D5FF{offer}&#FF5555.\n&#9CA3AFНужно &#FFFFFF{price} &#9CA3AF· у вас &#FFFFFF{balance}");
+
         messages.put("sell.not-sellable", "&#FF5555{item} не скупается.");
         messages.put("sell.in-progress", "&#FFAA00Продажа уже выполняется...");
         messages.put("sell.empty", "&#FF5555Нет предметов для продажи.");
@@ -108,6 +112,10 @@ public final class MessageDefaults {
         ));
         messages.put("gui.buyer.close", "&#FF5555Close");
         messages.put("gui.buyer.close-lore", List.of("&#AAAAAAReturn items"));
+
+        messages.put("boosters.insufficient-points", "&#FF5555Need &#E9D5FF{need} &#FF5555more SoulBuyer points for &#E9D5FF{offer}&#FF5555.\n&#9CA3AFCost &#FFFFFF{price} &#9CA3AF· you have &#FFFFFF{balance}");
+        messages.put("boosters.insufficient-vault", "&#FF5555Need &#FCD34D{need} &#FF5555more coins for &#E9D5FF{offer}&#FF5555.\n&#9CA3AFCost &#FFFFFF{price} &#9CA3AF· you have &#FFFFFF{balance}");
+        messages.put("boosters.insufficient-playerpoints", "&#FF5555Need &#FCD34D{need} &#FF5555more PlayerPoints for &#E9D5FF{offer}&#FF5555.\n&#9CA3AFCost &#FFFFFF{price} &#9CA3AF· you have &#FFFFFF{balance}");
 
         messages.put("sell.not-sellable", "&#FF5555{item} is not accepted.");
         messages.put("sell.in-progress", "&#FFAA00Sale already in progress...");

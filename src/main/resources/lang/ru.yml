@@ -217,9 +217,9 @@ gui:
 boosters:
   no-permission: "&#FF5555Бустеры недоступны."
   purchased: "&#86EFACАктивирован: {offer}"
-  insufficient-points: "&#FF5555Недостаточно очков SoulBuyer."
-  insufficient-vault: "&#FF5555Недостаточно монет."
-  insufficient-playerpoints: "&#FF5555Недостаточно PlayerPoints."
+  insufficient-points: "&#FF5555Не хватает &#E9D5FF{need} &#FF5555очков SoulBuyer на &#E9D5FF{offer}&#FF5555.\n&#9CA3AFНужно &#FFFFFF{price} &#9CA3AF· у вас &#FFFFFF{balance}"
+  insufficient-vault: "&#FF5555Не хватает &#FCD34D{need} &#FF5555монет на &#E9D5FF{offer}&#FF5555.\n&#9CA3AFНужно &#FFFFFF{price} &#9CA3AF· у вас &#FFFFFF{balance}"
+  insufficient-playerpoints: "&#FF5555Не хватает &#FCD34D{need} &#FF5555PlayerPoints на &#E9D5FF{offer}&#FF5555.\n&#9CA3AFНужно &#FFFFFF{price} &#9CA3AF· у вас &#FFFFFF{balance}"
 
 autosell:
   no-permission: "&#FF5555Автопродажа доступна донатерам."

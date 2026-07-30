@@ -17,4 +17,8 @@ public interface SaleLogRepository {
     CompletableFuture<Void> drainPending();
 
     CompletableFuture<PlayerDailySaleStats> loadDailyStats(UUID playerId, long sinceEpochMs);
+
+    default CompletableFuture<PlayerDailySaleStats> loadAllTimeStats(UUID playerId) {
+        return loadDailyStats(playerId, 0L);
+    }
 }

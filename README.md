@@ -294,6 +294,9 @@ economy:
 | `{sold_today_money}` | Монет за сегодня |
 | `{sold_today_points}` | Очков за сегодня |
 | `{sold_today_stacks}` | Позиций продано |
+| `{sold_alltime_money}` | Монет за всё время |
+| `{sold_alltime_points}` | Очков за всё время |
+| `{sold_alltime_stacks}` | Позиций за всё время |
 | `{active_items}` | Предметов в текущем ассортименте |
 
 ---
@@ -376,6 +379,9 @@ economy:
 | `%soulbuyer_sold_today_money%` | Монет продано сегодня |
 | `%soulbuyer_sold_today_points%` | Очков за сегодня |
 | `%soulbuyer_sold_today_stacks%` | Позиций продано сегодня |
+| `%soulbuyer_sold_alltime_money%` | Монет продано за всё время |
+| `%soulbuyer_sold_alltime_points%` | Очков за всё время |
+| `%soulbuyer_sold_alltime_stacks%` | Позиций продано за всё время |
 | `%soulbuyer_active_items%` | Предметов в текущем ассортименте |
 
 Плейсхолдеры PAPI можно вставлять в строки `lang/*.yml` — они подставятся при отрисовке GUI.

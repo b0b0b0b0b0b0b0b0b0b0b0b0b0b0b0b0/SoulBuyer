@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.entity.Player;
@@ -29,6 +30,8 @@ public final class BuyerStatsService {
 
     private final Map<UUID, PlayerDailySaleStats> dailyCache = new ConcurrentHashMap<>();
     private final Map<UUID, Long> dailyLoadedDay = new ConcurrentHashMap<>();
+    private final Map<UUID, PlayerDailySaleStats> allTimeCache = new ConcurrentHashMap<>();
+    private final Set<UUID> allTimeLoaded = ConcurrentHashMap.newKeySet();
     private volatile ZoneId dayZone = ZoneId.systemDefault();
 
     public BuyerStatsService(
@@ -51,39 +54,31 @@ public final class BuyerStatsService {
 
     public void recordSale(UUID playerId, double money, double points, int stacks) {
         refreshDayIfNeeded(playerId);
-        dailyCache.merge(
-                playerId,
-                new PlayerDailySaleStats(money, points, stacks),
-                (left, right) -> left.plus(right.money(), right.points(), right.stacks())
-        );
+        PlayerDailySaleStats delta = new PlayerDailySaleStats(money, points, stacks);
+        dailyCache.merge(playerId, delta, (left, right) -> left.plus(right.money(), right.points(), right.stacks()));
+        allTimeCache.merge(playerId, delta, (left, right) -> left.plus(right.money(), right.points(), right.stacks()));
     }
 
     public void preloadDaily(Player player) {
         UUID playerId = player.getUniqueId();
-        long dayStart = dayStartMs();
-        Long loadedDay = dailyLoadedDay.get(playerId);
-        if (loadedDay != null && loadedDay == dayStart) {
-            return;
-        }
-        saleLogRepository.loadDailyStats(playerId, dayStart).thenAccept(stats -> {
-            dailyCache.merge(
-                    playerId,
-                    stats,
-                    (left, right) -> left.plus(right.money(), right.points(), right.stacks())
-            );
-            dailyLoadedDay.put(playerId, dayStart);
-        });
+        preloadDailyStats(playerId);
+        preloadAllTimeStats(playerId);
     }
 
     public String[] guiPairs(Player player) {
-        PlayerDailySaleStats stats = dailyStats(player.getUniqueId());
+        preloadDaily(player);
+        PlayerDailySaleStats today = dailyStats(player.getUniqueId());
+        PlayerDailySaleStats allTime = allTimeStats(player.getUniqueId());
         Locale locale = localeOf(player);
         return new String[]{
                 "rotation_left", rotationLeftText(player, locale),
                 "rotation_seconds", String.valueOf(Math.max(0L, catalogRotationService.secondsUntilRotation())),
-                "sold_today_money", itemNameResolver.formatMoney(stats.money()),
-                "sold_today_points", itemNameResolver.formatMoney(stats.points()),
-                "sold_today_stacks", String.valueOf(stats.stacks()),
+                "sold_today_money", itemNameResolver.formatMoney(today.money()),
+                "sold_today_points", itemNameResolver.formatMoney(today.points()),
+                "sold_today_stacks", String.valueOf(today.stacks()),
+                "sold_alltime_money", itemNameResolver.formatMoney(allTime.money()),
+                "sold_alltime_points", itemNameResolver.formatMoney(allTime.points()),
+                "sold_alltime_stacks", String.valueOf(allTime.stacks()),
                 "active_items", String.valueOf(itemRegistry.activeSize())
         };
     }
@@ -102,9 +97,40 @@ public final class BuyerStatsService {
         return placeholderApiBridge;
     }
 
+    private void preloadDailyStats(UUID playerId) {
+        long dayStart = dayStartMs();
+        Long loadedDay = dailyLoadedDay.get(playerId);
+        if (loadedDay != null && loadedDay == dayStart) {
+            return;
+        }
+        saleLogRepository.loadDailyStats(playerId, dayStart).thenAccept(stats -> {
+            dailyCache.merge(
+                    playerId,
+                    stats,
+                    (left, right) -> left.plus(right.money(), right.points(), right.stacks())
+            );
+            dailyLoadedDay.put(playerId, dayStart);
+        });
+    }
+
+    private void preloadAllTimeStats(UUID playerId) {
+        if (!allTimeLoaded.add(playerId)) {
+            return;
+        }
+        saleLogRepository.loadAllTimeStats(playerId).thenAccept(stats -> allTimeCache.merge(
+                playerId,
+                stats,
+                (left, right) -> left.plus(right.money(), right.points(), right.stacks())
+        ));
+    }
+
     private PlayerDailySaleStats dailyStats(UUID playerId) {
         refreshDayIfNeeded(playerId);
         return dailyCache.getOrDefault(playerId, PlayerDailySaleStats.empty());
+    }
+
+    private PlayerDailySaleStats allTimeStats(UUID playerId) {
+        return allTimeCache.getOrDefault(playerId, PlayerDailySaleStats.empty());
     }
 
     private void refreshDayIfNeeded(UUID playerId) {

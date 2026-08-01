@@ -14,30 +14,30 @@ public final class GuiAutosellSettings extends YamlSerializable {
         super(SoulBuyerSerializerConfig.INSTANCE);
     }
 
-    @Comment(@CommentValue("Ключ заголовка в lang/*.yml"))
+    @Comment(@CommentValue("Title key in lang/*.yml"))
     public String titleKey = "gui.autosell.title";
 
-    @Comment(@CommentValue("54 = 6 рядов"))
+    @Comment(@CommentValue("54 = 6 rows"))
     public int size = 54;
 
     @Comment({
-            @CommentValue("Разделитель под кнопками категорий (серые панели)."),
-            @CommentValue("По умолчанию слоты 10–16 — второй ряд.")
+            @CommentValue("Separator under category buttons (gray panes)."),
+            @CommentValue("By default slots 10–16 — second row.")
     })
     public List<Integer> separatorSlots = List.of(10, 11, 12, 13, 14, 15, 16);
 
     @NewLine
     @Comment({
-            @CommentValue("Кнопки и фон меню автопродажи."),
+            @CommentValue("Buttons and background for the autosell menu."),
             @CommentValue("action:"),
-            @CommentValue("  DECORATION — фон и блок info"),
-            @CommentValue("  AUTO_TOGGLE — вкл/выкл автопродажу"),
-            @CommentValue("  AUTO_TRIGGER — когда продавать (подбор / меню / сундук)"),
-            @CommentValue("  AUTO_NOTIFY — куда писать уведомления"),
-            @CommentValue("  AUTO_MIN_PRICE — минимальная цена за штуку"),
-            @CommentValue("  AUTO_PAYOUT — обычный или донатный скупщик"),
-            @CommentValue("  AUTO_CATEGORY — ЛКМ вкл/выкл категорию, ПКМ выбор предметов (+ category-filter)"),
-            @CommentValue("  AUTO_BACK — назад в скупщик")
+            @CommentValue("  DECORATION — background and info block"),
+            @CommentValue("  AUTO_TOGGLE — enable/disable autosell"),
+            @CommentValue("  AUTO_TRIGGER — when to sell (pickup / menu / chest)"),
+            @CommentValue("  AUTO_NOTIFY — notification destination"),
+            @CommentValue("  AUTO_MIN_PRICE — minimum price per unit"),
+            @CommentValue("  AUTO_PAYOUT — regular or donate buyer"),
+            @CommentValue("  AUTO_CATEGORY — LMB toggle category, RMB pick items (+ category-filter)"),
+            @CommentValue("  AUTO_BACK — back to buyer")
     })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 

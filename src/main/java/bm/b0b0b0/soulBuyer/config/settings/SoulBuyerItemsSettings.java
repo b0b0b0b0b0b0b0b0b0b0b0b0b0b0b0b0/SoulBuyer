@@ -12,13 +12,13 @@ public final class SoulBuyerItemsSettings extends YamlSerializable {
     }
 
     @Comment({
-            @CommentValue("=== СКУПАЕМЫЕ ПРЕДМЕТЫ ==="),
-            @CommentValue("id — внутренний ключ (не Material). Используется в статистике и рынке."),
+            @CommentValue("=== SELLABLE ITEMS ==="),
+            @CommentValue("id — internal key (not Material). Used in stats and market."),
             @CommentValue("material — Bukkit Material (DIAMOND, IRON_INGOT, …)."),
-            @CommentValue("category — id из categories в config.yml."),
-            @CommentValue("base-price — цена за 1 шт. при коэффициенте рынка 1.0."),
-            @CommentValue("base-points — очки прогрессии за 1 шт."),
-            @CommentValue("custom-model-data: -1 = любой CMD; число ≥ 0 = только с этим CMD.")
+            @CommentValue("category — id from categories in config.yml."),
+            @CommentValue("base-price — price per unit at market coefficient 1.0."),
+            @CommentValue("base-points — progression points per unit."),
+            @CommentValue("custom-model-data: -1 = any CMD; number ≥ 0 = only that CMD.")
     })
     public Map<String, SoulBuyerSettings.SellableItemSettings> items = SoulBuyerItemDefaults.create();
 }

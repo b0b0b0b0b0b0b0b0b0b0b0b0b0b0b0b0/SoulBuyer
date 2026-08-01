@@ -6,8 +6,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.ConfigurationSection;
@@ -16,35 +18,84 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MessageLoader {
 
-    private static final List<String> KNOWN_LOCALES = List.of("ru", "en");
+    private static final List<String> BUNDLED_LOCALES = List.of("en", "ru", "fi");
 
     private final JavaPlugin plugin;
-    private final String defaultLocale;
     private final String fallbackLocale;
     private volatile Map<String, Map<String, Object>> locales = Map.of();
 
-    public MessageLoader(JavaPlugin plugin, String defaultLocale, String fallbackLocale) {
+    public MessageLoader(JavaPlugin plugin, String fallbackLocale) {
         this.plugin = plugin;
-        this.defaultLocale = defaultLocale;
-        this.fallbackLocale = fallbackLocale;
+        this.fallbackLocale = normalizeLocaleId(fallbackLocale);
     }
 
     public void load() {
         Map<String, Map<String, Object>> next = new LinkedHashMap<>();
-        for (String locale : KNOWN_LOCALES) {
+        Path langDir = plugin.getDataFolder().toPath().resolve("lang");
+        for (String locale : BUNDLED_LOCALES) {
             ensureLocaleFile(locale);
             syncBundledLocale(locale);
+        }
+        for (String locale : discoverLocaleIds(langDir)) {
             next.put(locale, loadLocaleMap(locale));
         }
         locales = Map.copyOf(next);
     }
 
-    public String defaultLocale() {
-        return defaultLocale;
+    public String fallbackLocale() {
+        return fallbackLocale;
+    }
+
+    public List<String> loadedLocaleIds() {
+        return List.copyOf(locales.keySet());
     }
 
     public boolean containsLocale(String locale) {
-        return locales.containsKey(locale);
+        return locales.containsKey(normalizeLocaleId(locale));
+    }
+
+    private List<String> discoverLocaleIds(Path langDir) {
+        List<String> localeIds = new ArrayList<>();
+        try {
+            if (!Files.isDirectory(langDir)) {
+                return BUNDLED_LOCALES;
+            }
+            try (var stream = Files.list(langDir)) {
+                stream.filter(path -> {
+                    String name = path.getFileName().toString();
+                    return name.endsWith(".yml") && !name.startsWith(".");
+                }).sorted().forEach(path -> {
+                    String localeId = localeIdFromFileName(path.getFileName().toString());
+                    if (localeId != null) {
+                        localeIds.add(localeId);
+                    }
+                });
+            }
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to scan lang directory", exception);
+        }
+        if (localeIds.isEmpty()) {
+            return BUNDLED_LOCALES;
+        }
+        return localeIds;
+    }
+
+    private static String localeIdFromFileName(String fileName) {
+        if (!fileName.endsWith(".yml")) {
+            return null;
+        }
+        String localeId = fileName.substring(0, fileName.length() - ".yml".length()).trim();
+        if (localeId.isEmpty()) {
+            return null;
+        }
+        return localeId.toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeLocaleId(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "en";
+        }
+        return raw.toLowerCase(Locale.ROOT).trim();
     }
 
     private void ensureLocaleFile(String locale) {
@@ -146,7 +197,10 @@ public final class MessageLoader {
         if ("en".equalsIgnoreCase(locale)) {
             return MessageDefaults.en();
         }
-        return MessageDefaults.ru();
+        if ("ru".equalsIgnoreCase(locale)) {
+            return MessageDefaults.ru();
+        }
+        return MessageDefaults.en();
     }
 
     private Map<String, Object> loadLocaleMap(String locale) {
@@ -196,7 +250,7 @@ public final class MessageLoader {
 
     public boolean containsKey(String locale, String key) {
         Map<String, Map<String, Object>> snapshot = locales;
-        Map<String, Object> primary = snapshot.get(locale);
+        Map<String, Object> primary = snapshot.get(normalizeLocaleId(locale));
         if (primary != null && primary.containsKey(key)) {
             return true;
         }
@@ -206,7 +260,8 @@ public final class MessageLoader {
 
     private Object resolve(String locale, String key) {
         Map<String, Map<String, Object>> snapshot = locales;
-        Map<String, Object> primary = snapshot.get(locale);
+        String normalized = normalizeLocaleId(locale);
+        Map<String, Object> primary = snapshot.get(normalized);
         if (primary != null && primary.containsKey(key)) {
             return primary.get(key);
         }

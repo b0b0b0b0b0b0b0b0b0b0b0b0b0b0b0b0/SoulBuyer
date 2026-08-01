@@ -119,12 +119,24 @@ public final class PluginConfig {
         return main.redis;
     }
 
-    public String defaultLocale() {
-        return main.locale.defaultLocale;
+    public String localeMode() {
+        return main.locale.localeMode;
+    }
+
+    public String serverLocale() {
+        return main.locale.serverLocale;
     }
 
     public String fallbackLocale() {
         return main.locale.fallbackLocale;
+    }
+
+    public boolean checkForUpdates() {
+        return main.checkForUpdates;
+    }
+
+    public boolean bstatsEnabled() {
+        return main.bstats.enabled;
     }
 
     public String permissionUse() {

@@ -14,15 +14,15 @@ public final class GuiBoostersSettings extends YamlSerializable {
         super(SoulBuyerSerializerConfig.INSTANCE);
     }
 
-    @Comment(@CommentValue("Ключ заголовка в lang/*.yml"))
+    @Comment(@CommentValue("Title key in lang/*.yml"))
     public String titleKey = "gui.boosters.title";
 
-    @Comment(@CommentValue("54 = 6 рядов"))
+    @Comment(@CommentValue("54 = 6 rows"))
     public int size = 54;
 
     @Comment({
-            @CommentValue("Слоты серых панелей (elements.separator) вокруг офферов 20, 22, 24."),
-            @CommentValue("Остальные пустые ячейки заливаются elements.border (чёрное стекло).")
+            @CommentValue("Gray pane slots (elements.separator) around offers 20, 22, 24."),
+            @CommentValue("Other empty cells are filled with elements.border (black glass).")
     })
     public List<Integer> separatorSlots = List.of(
             10, 11, 12, 13, 14, 15, 16,
@@ -32,12 +32,12 @@ public final class GuiBoostersSettings extends YamlSerializable {
 
     @NewLine
     @Comment({
-            @CommentValue("Кнопки и шаблоны фона меню бустеров."),
-            @CommentValue("border / separator — шаблоны (slot: -1). Имя стёкол: lang → gui.boosters.border / separator."),
+            @CommentValue("Buttons and background templates for the boosters menu."),
+            @CommentValue("border / separator — templates (slot: -1). Glass names: lang → gui.boosters.border / separator."),
             @CommentValue("action:"),
-            @CommentValue("  DECORATION — фон (border, separator) и справка info; клик ничего не делает"),
-            @CommentValue("  BOOSTER_BUY — покупка; offer-id = ключ из config.yml → boosters.offers"),
-            @CommentValue("  BOOSTER_BACK — назад в скупщик")
+            @CommentValue("  DECORATION — background (border, separator) and info; click does nothing"),
+            @CommentValue("  BOOSTER_BUY — purchase; offer-id = key from config.yml → boosters.offers"),
+            @CommentValue("  BOOSTER_BACK — back to buyer")
     })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 

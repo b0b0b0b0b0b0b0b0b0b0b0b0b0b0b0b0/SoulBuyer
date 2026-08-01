@@ -14,34 +14,34 @@ public final class GuiQuantitySettings extends YamlSerializable {
         super(SoulBuyerSerializerConfig.INSTANCE);
     }
 
-    @Comment(@CommentValue("Ключ заголовка в lang/*.yml"))
+    @Comment(@CommentValue("Title key in lang/*.yml"))
     public String titleKey = "gui.quantity.title";
 
-    @Comment(@CommentValue("54 = 6 рядов"))
+    @Comment(@CommentValue("54 = 6 rows"))
     public int size = 54;
 
-    @Comment(@CommentValue("Слот превью продаваемого предмета"))
+    @Comment(@CommentValue("Slot for the sellable item preview"))
     public int previewSlot = 31;
 
-    @Comment(@CommentValue("Слот счётчика выбранного количества"))
+    @Comment(@CommentValue("Slot for the selected amount counter"))
     public int amountInfoSlot = 22;
 
     @Comment({
-            @CommentValue("Разделитель вокруг блока выбора количества (серые панели)."),
-            @CommentValue("По умолчанию слоты 10–16 — второй ряд.")
+            @CommentValue("Separator around the quantity picker (gray panes)."),
+            @CommentValue("By default slots 10–16 — second row.")
     })
     public List<Integer> separatorSlots = List.of(10, 11, 12, 13, 14, 15, 16);
 
     @NewLine
     @Comment({
-            @CommentValue("Кнопки и фон меню выбора количества."),
+            @CommentValue("Buttons and background for the quantity menu."),
             @CommentValue("action:"),
-            @CommentValue("  DECORATION — фон и блок amount-info"),
+            @CommentValue("  DECORATION — background and amount-info block"),
             @CommentValue("  QTY_MINUS_1 / QTY_PLUS_1 / QTY_MINUS_5 / QTY_PLUS_5 / QTY_MINUS_10 / QTY_PLUS_10"),
-            @CommentValue("  QTY_SET_1 / QTY_SET_5 / QTY_SET_10 — быстрый выбор количества"),
-            @CommentValue("  QTY_CONFIRM — продать выбранное"),
-            @CommentValue("  QTY_SELL_ALL — продать максимум"),
-            @CommentValue("  QTY_BACK — назад в скупщик")
+            @CommentValue("  QTY_SET_1 / QTY_SET_5 / QTY_SET_10 — quick amount presets"),
+            @CommentValue("  QTY_CONFIRM — sell selected amount"),
+            @CommentValue("  QTY_SELL_ALL — sell maximum"),
+            @CommentValue("  QTY_BACK — back to buyer")
     })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 

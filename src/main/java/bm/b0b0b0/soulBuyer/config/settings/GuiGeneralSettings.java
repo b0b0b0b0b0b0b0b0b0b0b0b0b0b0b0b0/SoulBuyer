@@ -13,29 +13,29 @@ public final class GuiGeneralSettings extends YamlSerializable {
     }
 
     @NewLine
-    @Comment(@CommentValue("true — убрать ванильный курсив у названий и lore предметов в GUI"))
+    @Comment(@CommentValue("true — remove vanilla italics from item names and lore in GUI"))
     public boolean disableItemItalic = true;
 
     public static final class GuiElementSettings {
-        @Comment(@CommentValue("Номер слота в меню (0–53). -1 = шаблон фона (border/separator), слот не занимает"))
+        @Comment(@CommentValue("Slot index in the menu (0–53). -1 = background template (border/separator), does not occupy a slot"))
         public int slot = 0;
 
-        @Comment(@CommentValue("Иконка предмета (Material Bukkit): BLACK_STAINED_GLASS_PANE, GOLD_INGOT…"))
+        @Comment(@CommentValue("Item icon (Bukkit Material): BLACK_STAINED_GLASS_PANE, GOLD_INGOT…"))
         public String material = "STONE";
 
-        @Comment(@CommentValue("Название: ключ из lang/*.yml (name-key → gui.… в переводе)"))
+        @Comment(@CommentValue("Display name: key from lang/*.yml (name-key → gui.… in translations)"))
         public String nameKey = "";
 
-        @Comment(@CommentValue("Строки lore: ключи из lang/*.yml, сверху вниз"))
+        @Comment(@CommentValue("Lore lines: keys from lang/*.yml, top to bottom"))
         public List<String> loreKeys = List.of();
 
-        @Comment(@CommentValue("Клик: DECORATION = декор без действия. Другие значения — в шапке elements этого gui/*.yml"))
+        @Comment(@CommentValue("Click: DECORATION = decor with no action. Other values — see elements header in this gui/*.yml"))
         public String action = "NONE";
 
-        @Comment(@CommentValue("Только фильтр категорий (buyer/autosell): ores | mobs | plants | blocks | misc"))
+        @Comment(@CommentValue("Category filter only (buyer/autosell): ores | mobs | plants | blocks | misc"))
         public String categoryFilter = "";
 
-        @Comment(@CommentValue("Только бустеры (BOOSTER_BUY): id из config.yml → boosters.offers"))
+        @Comment(@CommentValue("Boosters only (BOOSTER_BUY): id from config.yml → boosters.offers"))
         public String offerId = "";
     }
 }

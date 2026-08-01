@@ -21,6 +21,15 @@ public final class DurationFormatter {
             }
             return secs + "с";
         }
+        if ("fi".equalsIgnoreCase(locale.getLanguage())) {
+            if (hours > 0L) {
+                return hours + " t " + minutes + " min";
+            }
+            if (minutes > 0L) {
+                return minutes + " min " + secs + " s";
+            }
+            return secs + " s";
+        }
         if (hours > 0L) {
             return hours + "h " + minutes + "m";
         }

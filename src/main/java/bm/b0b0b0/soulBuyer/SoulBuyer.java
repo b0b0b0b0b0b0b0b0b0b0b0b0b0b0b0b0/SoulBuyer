@@ -1,5 +1,6 @@
 package bm.b0b0b0.soulBuyer;
 
+import bm.b0b0b0.soulBuyer.bootstrap.SoulBuyerMetrics;
 import bm.b0b0b0.soulBuyer.bootstrap.EconomyWaitListener;
 import bm.b0b0b0.soulBuyer.bootstrap.SoulBuyerStartupLog;
 import bm.b0b0b0.soulBuyer.command.SoulBuyerCommandRegistrar;
@@ -113,18 +114,19 @@ public final class SoulBuyer extends JavaPlugin {
         try {
             if (!getDataFolder().exists() && !getDataFolder().mkdirs()) {
                 debugLog.warn("failed to create data folder");
-                startupLog.stepFail("Папка данных — не удалось создать");
+                startupLog.stepFail("Data folder — failed to create");
             }
 
             ConfigLegacyGuard.prepare(this, debugLog);
-            startupLog.info("Загрузка конфигурации...");
+            startupLog.info("Loading configuration...");
             debugLog.boot("loading Elytrium configs on main thread...");
             configurationLoader = new ConfigurationLoader();
             PluginConfig pluginConfig = configurationLoader.load(this, debugLog);
             debugLog.setEnabled(pluginConfig.debug());
             debugLog.setTooltipDebugEnabled(pluginConfig.debugTooltip());
             startupLog.stepSchedulers();
-            startupLog.stepOk("Конфиг — storage=" + pluginConfig.storageType()
+            SoulBuyerMetrics.tryStart(this, pluginConfig.bstatsEnabled());
+            startupLog.stepOk("Config — storage=" + pluginConfig.storageType()
                     + ", предметов=" + pluginConfig.items().size()
                     + ", debug=" + pluginConfig.debug());
             debugLog.boot("config OK | storage=" + pluginConfig.storageType()
@@ -137,23 +139,19 @@ public final class SoulBuyer extends JavaPlugin {
             commandRegistrar.bindCommandSettings(pluginConfig);
             commandRegistrar.registerLifecycle();
 
-            messageLoader = new MessageLoader(
-                    this,
-                    pluginConfig.defaultLocale(),
-                    pluginConfig.fallbackLocale()
-            );
-            startupLog.info("Загрузка lang (" + pluginConfig.defaultLocale() + ")...");
-            debugLog.boot("loading lang (" + pluginConfig.defaultLocale() + ")...");
+            messageLoader = new MessageLoader(this, pluginConfig.fallbackLocale());
+            startupLog.info("Loading lang...");
+            debugLog.boot("loading lang...");
             messageLoader.load();
-            startupLog.stepOk("Lang — " + pluginConfig.defaultLocale());
+            startupLog.stepOk("Lang — " + String.join(", ", messageLoader.loadedLocaleIds()));
             debugLog.boot("lang OK");
 
-            startupLog.info("Подключение хранилища...");
+            startupLog.info("Connecting storage...");
             debugLog.boot("queue storage/redis on IO thread...");
             SoulBuyerIoExecutor.executor().execute(() -> runStorageBootstrap(pluginConfig));
         } catch (Throwable throwable) {
             debugLog.error("onEnable failed on main thread", throwable);
-            startupLog.stepFail("Ошибка при старте — см. stack trace выше");
+            startupLog.stepFail("Startup error — see stack trace above");
             startupLog.bannerFailure(throwable.getMessage() == null ? "unknown error" : throwable.getMessage());
             getServer().getPluginManager().disablePlugin(this);
         }
@@ -167,7 +165,7 @@ public final class SoulBuyer extends JavaPlugin {
             debugLog.boot("storage startBlocking...");
             StorageSession session = storage.startBlocking();
             storageBootstrap = storage;
-            startupLog.stepOk("Хранилище — " + pluginConfig.storageType());
+            startupLog.stepOk("Storage — " + pluginConfig.storageType());
             debugLog.boot("storage OK");
 
             RedisBootstrap redis = new RedisBootstrap(this, pluginConfig, debugLog);
@@ -178,7 +176,7 @@ public final class SoulBuyer extends JavaPlugin {
             PluginSchedulers.runGlobal(this, () -> beginActivate(pluginConfig, session, redis));
         } catch (Throwable throwable) {
             debugLog.error("storage bootstrap FAILED after " + (System.currentTimeMillis() - startedAt) + "ms", throwable);
-            startupLog.stepFail("Хранилище — ошибка подключения");
+            startupLog.stepFail("Storage — connection failed");
             startupLog.bannerFailure("storage bootstrap failed");
             PluginSchedulers.runGlobal(this, () -> {
                 shutdownStartedResources();
@@ -206,6 +204,7 @@ public final class SoulBuyer extends JavaPlugin {
         }
 
         messageService = new MessageService(messageLoader);
+        wireMessageServiceConfig(pluginConfig);
         messageService.setDisableGuiItemItalic(pluginConfig.generalGui().disableItemItalic);
         commandRegistrar.bind(pluginConfig, messageService, configurationLoader);
         debugLog.boot("command registrar bound, runtime.ready=" + runtime.isReady());
@@ -216,7 +215,7 @@ public final class SoulBuyer extends JavaPlugin {
         economyRetryAttempt = 0;
         economyWaitLogged = false;
         economyWaitActive.set(true);
-        startupLog.info("Проверка зависимостей...");
+        startupLog.info("Checking dependencies...");
         attemptEconomyActivation();
     }
 
@@ -271,10 +270,10 @@ public final class SoulBuyer extends JavaPlugin {
         if (!economyWaitLogged) {
             economyWaitLogged = true;
             if (state == VaultEconomyHook.ProbeState.VAULT_ABSENT) {
-                startupLog.stepFail("Vault — не найден");
+                startupLog.stepFail("Vault — not found");
             } else {
-                startupLog.stepOk("Vault — найден");
-                startupLog.stepFail("Economy — провайдер не зарегистрирован");
+                startupLog.stepOk("Vault — found");
+                startupLog.stepFail("Economy — provider not registered");
             }
         }
         if (state == VaultEconomyHook.ProbeState.VAULT_ABSENT) {
@@ -306,20 +305,20 @@ public final class SoulBuyer extends JavaPlugin {
             return false;
         }
         if (!EconomyPluginPresence.playerPointsInstalled()) {
-            startupLog.stepSkipped("PlayerPoints — не найден, fallback невозможен");
+            startupLog.stepSkipped("PlayerPoints — not found, fallback unavailable");
             return false;
         }
         pendingConfig.enablePlayerPointsOnlyMode();
         if (configurationLoader != null) {
             try {
                 configurationLoader.saveMain(this, debugLog);
-                startupLog.stepOk("Конфиг — economy.player-points-enabled: true (авто, без Vault)");
+                startupLog.stepOk("Config — economy.player-points-enabled: true (auto, no Vault)");
             } catch (Exception exception) {
                 debugLog.warn("failed to persist player-points-only fallback: " + exception.getMessage());
-                startupLog.stepOk("Режим PlayerPoints-only (конфиг не сохранён на диск)");
+                startupLog.stepOk("PlayerPoints-only mode (config not saved to disk)");
             }
         } else {
-            startupLog.stepOk("Режим PlayerPoints-only (без Vault)");
+            startupLog.stepOk("PlayerPoints-only mode (no Vault)");
         }
         economyWaitLogged = false;
         attemptEconomyActivation();
@@ -330,10 +329,10 @@ public final class SoulBuyer extends JavaPlugin {
         if (!economyWaitLogged) {
             economyWaitLogged = true;
             if (state == PlayerPointsEconomyHook.ProbeState.PLUGIN_ABSENT) {
-                startupLog.stepFail("PlayerPoints — не найден");
+                startupLog.stepFail("PlayerPoints — not found");
             } else {
-                startupLog.stepOk("PlayerPoints — найден");
-                startupLog.stepFail("PlayerPoints — API ещё не готов");
+                startupLog.stepOk("PlayerPoints — found");
+                startupLog.stepFail("PlayerPoints — API not ready");
             }
         }
         if (state == PlayerPointsEconomyHook.ProbeState.PLUGIN_ABSENT) {
@@ -347,17 +346,17 @@ public final class SoulBuyer extends JavaPlugin {
 
     private void logVaultDependencySkipped() {
         if (EconomyPluginPresence.vaultInstalled()) {
-            startupLog.stepSkipped("Vault — не требуется в конфиге (найден на сервере)");
+            startupLog.stepSkipped("Vault — not required in config (found on server)");
         } else {
-            startupLog.stepSkipped("Vault — не требуется в конфиге");
+            startupLog.stepSkipped("Vault — not required in config");
         }
     }
 
     private void logPlayerPointsDependencySkipped() {
         if (EconomyPluginPresence.playerPointsInstalled()) {
-            startupLog.stepSkipped("PlayerPoints — отключён в конфиге (найден на сервере)");
+            startupLog.stepSkipped("PlayerPoints — disabled in config (found on server)");
         } else {
-            startupLog.stepSkipped("PlayerPoints — отключён в конфиге");
+            startupLog.stepSkipped("PlayerPoints — disabled in config");
         }
     }
 
@@ -372,15 +371,15 @@ public final class SoulBuyer extends JavaPlugin {
 
     private void scheduleEconomyRetry(String label) {
         if (economyRetryAttempt == 0) {
-            startupLog.stepWaiting(label + " — ожидание...");
+            startupLog.stepWaiting(label + " — waiting...");
             debugLog.boot(label + " missing, waiting...");
         } else if (economyRetryAttempt % 20 == 0) {
             debugLog.log("still waiting for " + label + ", attempt=" + economyRetryAttempt + "/" + ECONOMY_RETRY_MAX);
         }
         if (economyRetryAttempt >= ECONOMY_RETRY_MAX) {
             economyWaitActive.set(false);
-            startupLog.stepFail(label + " — не подключился");
-            startupLog.abort(label + " не подключился — SoulBuyer отключён.");
+            startupLog.stepFail(label + " — not connected");
+            startupLog.abort(label + " not connected — SoulBuyer disabled.");
             debugLog.boot(label + " not available — disabling SoulBuyer");
             pendingSession.shutdown().run();
             pendingRedis.shutdown();
@@ -415,7 +414,7 @@ public final class SoulBuyer extends JavaPlugin {
         } catch (Throwable throwable) {
             bootstrapFinished.set(false);
             debugLog.error("finishActivate failed", throwable);
-            startupLog.abort("Ошибка инициализации — см. stack trace выше");
+            startupLog.abort("Initialization error — see stack trace above");
             shutdownStartedResources();
             if (isEnabled()) {
                 getServer().getPluginManager().disablePlugin(this);
@@ -486,9 +485,11 @@ public final class SoulBuyer extends JavaPlugin {
                                     + " memory=" + coefficients.size());
                             runtime.markReady();
                             catalogRotationService.start();
-                            startupLog.stepOk("Рынок — " + coefficients.size() + " позиций");
+                            startupLog.stepOk("Market — " + coefficients.size() + " entries");
                             startupLog.bannerSuccess();
-                            SoulBuyerUpdateChecker.schedule(this, getPluginMeta().getVersion());
+                            if (pluginConfig.checkForUpdates()) {
+                                SoulBuyerUpdateChecker.schedule(this, getPluginMeta().getVersion());
+                            }
                             debugLog.boot("runtime ready after market load");
                         })
                 );
@@ -616,21 +617,21 @@ public final class SoulBuyer extends JavaPlugin {
         long flushTicks = Math.max(1L, flushInterval / 50L);
         saleFlushTask = PluginSchedulers.runAsyncTimer(this, saleLogRepository::flushPending, flushTicks, flushTicks);
 
-        startupLog.info("Загрузка коэффициентов рынка...");
+        startupLog.info("Loading market coefficients...");
         debugLog.boot("SoulBuyer wiring complete, waiting for market | storage=" + pluginConfig.storageType()
                 + " | server-id=" + pluginConfig.serverId());
     }
 
     private void logRedisStatus(PluginConfig pluginConfig, RedisBootstrap redis) {
         if (pluginConfig.singleServer() || !pluginConfig.redis().enabled) {
-            startupLog.stepSkipped("Redis — не используется (single-server или disabled)");
+            startupLog.stepSkipped("Redis — not used (single-server or disabled)");
             return;
         }
         if (redis.connected()) {
             startupLog.stepOk("Redis — " + pluginConfig.redis().host + ":" + pluginConfig.redis().port);
             return;
         }
-        startupLog.stepFail("Redis — не подключён");
+        startupLog.stepFail("Redis — not connected");
     }
 
     private void logEconomyStatus(
@@ -643,24 +644,24 @@ public final class SoulBuyer extends JavaPlugin {
                 String name = vaultEconomyHook.providerName();
                 startupLog.stepOk("Vault — economy" + (name.isEmpty() ? "" : " (" + name + ")"));
             } else {
-                startupLog.stepFail("Vault — economy не подключена");
+                startupLog.stepFail("Vault — economy not connected");
             }
         }
         if (config.requiresPlayerPoints()) {
             if (playerPointsEconomyHook.available()) {
-                startupLog.stepOk("PlayerPoints — API подключён");
+                startupLog.stepOk("PlayerPoints — API connected");
             } else {
-                startupLog.stepFail("PlayerPoints — API не подключён");
+                startupLog.stepFail("PlayerPoints — API not connected");
             }
         }
     }
 
     private void logPlaceholderApiStatus(PlaceholderApiBridge placeholderApiBridge) {
         if (!placeholderApiBridge.available()) {
-            startupLog.stepSkipped("PlaceholderAPI — не найден (плейсхолдеры отключены)");
+            startupLog.stepSkipped("PlaceholderAPI — not found (placeholders disabled)");
             return;
         }
-        startupLog.stepOk("PlaceholderAPI — найден");
+        startupLog.stepOk("PlaceholderAPI — found");
     }
 
     private void shutdownStartedResources() {
@@ -681,6 +682,15 @@ public final class SoulBuyer extends JavaPlugin {
 
     public MessageService messageService() {
         return messageService;
+    }
+
+    private void wireMessageServiceConfig(PluginConfig config) {
+        messageService.setForcedLocaleSupplier(() -> {
+            if (!"SERVER".equalsIgnoreCase(config.localeMode())) {
+                return null;
+            }
+            return config.serverLocale();
+        });
     }
 
     public SoulBuyerRuntime runtime() {

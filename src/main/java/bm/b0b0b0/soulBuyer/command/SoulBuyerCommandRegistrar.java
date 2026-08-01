@@ -373,6 +373,7 @@ public final class SoulBuyerCommandRegistrar {
                 PluginConfig reloaded = loader.reload(plugin, plugin.debug());
                 messageService.reloadAsync(plugin, () -> {
                     runtime.updatePluginConfig(reloaded);
+                    wireMessageServiceConfig(reloaded);
                     messageService.setDisableGuiItemItalic(reloaded.generalGui().disableItemItalic);
                     runtime.itemRegistry().reload(reloaded);
                     if (runtime.catalogRotationService() != null) {
@@ -408,6 +409,19 @@ public final class SoulBuyerCommandRegistrar {
                 "[SoulBuyer] debug-tooltip выключен. В config.yml: debug-tooltip: true, затем /soulbuyer admin reload"
         ));
         return false;
+    }
+
+    private void wireMessageServiceConfig(PluginConfig config) {
+        MessageService messages = messageService;
+        if (messages == null) {
+            return;
+        }
+        messages.setForcedLocaleSupplier(() -> {
+            if (!"SERVER".equalsIgnoreCase(config.localeMode())) {
+                return null;
+            }
+            return config.serverLocale();
+        });
     }
 
     private void send(CommandSender sender, String key) {

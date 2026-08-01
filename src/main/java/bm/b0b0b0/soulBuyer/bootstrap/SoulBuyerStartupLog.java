@@ -31,15 +31,15 @@ public final class SoulBuyerStartupLog {
             console.sendMessage(PREFIX + GRAY + "Paper · Folia-ready (region schedulers)" + RESET);
         }
         console.sendMessage(PREFIX + " ");
-        console.sendMessage(PREFIX + " Инициализация:");
+        console.sendMessage(PREFIX + " Startup:");
     }
 
     public void bannerSuccess() {
         if (FOLIA) {
-            console.sendMessage(PREFIX + GREEN + "SoulBuyer успешно загружен" + RESET
+            console.sendMessage(PREFIX + GREEN + "SoulBuyer enabled successfully" + RESET
                     + GRAY + " · " + RESET + CYAN + "Folia OK" + RESET);
         } else {
-            console.sendMessage(PREFIX + GREEN + "SoulBuyer успешно загружен" + RESET);
+            console.sendMessage(PREFIX + GREEN + "SoulBuyer enabled successfully" + RESET);
         }
         console.sendMessage(PREFIX + "==============================");
         console.sendMessage(" ");
@@ -84,7 +84,7 @@ public final class SoulBuyerStartupLog {
     }
 
     public void unload() {
-        console.sendMessage(PREFIX + GRAY + "SoulBuyer выгружен" + RESET);
+        console.sendMessage(PREFIX + GRAY + "SoulBuyer disabled" + RESET);
     }
 
     private static boolean detectFolia() {

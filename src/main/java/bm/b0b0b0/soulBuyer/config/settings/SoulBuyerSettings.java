@@ -15,232 +15,294 @@ public final class SoulBuyerSettings extends YamlSerializable {
         super(SoulBuyerSerializerConfig.INSTANCE);
     }
 
-    @Comment(@CommentValue("Подробные логи в консоль: bootstrap, команды, продажи, storage. На проде — false."))
+    @Comment({
+            @CommentValue("=== Update check ==="),
+            @CommentValue("On startup (async): fetch latest version from https://b0b0b0.dev/pl/souls/soulbuyer.txt"),
+            @CommentValue("and print result to console. No player or server data is sent."),
+            @CommentValue("Set false to disable the remote version check entirely."),
+    })
+    public boolean checkForUpdates = true;
+
+    @NewLine
+    @Comment({
+            @CommentValue("=== bStats (anonymous usage statistics) ==="),
+            @CommentValue("Helps the author see how many servers run SoulBuyer: plugin version."),
+            @CommentValue("Set enabled: false to opt out on this server."),
+    })
+    public BstatsSettings bstats = new BstatsSettings();
+
+    @Comment(@CommentValue("Verbose console logs: bootstrap, commands, sales, storage. Use false in production."))
     public boolean debug = false;
 
-    @Comment(@CommentValue("TOOLTIP-DEBUG: дамп иконок GUI в консоль (/soulbuyer admin debug-tooltip, автодамп smithing в /buyer). На проде — false."))
+    @Comment(@CommentValue("TOOLTIP-DEBUG: dump GUI icon stacks to console (/soulbuyer admin debug-tooltip, auto-dump smithing in /buyer). Set false in production."))
     public boolean debugTooltip = false;
 
     @NewLine
     @Comment({
-            @CommentValue("=== РЕЖИМ ХРАНЕНИЯ ДАННЫХ ==="),
-            @CommentValue("Куда плагин сохраняет прогресс игроков (очки, категории) и состояние рынка."),
-            @CommentValue("flat   — YAML на игрока + market.yml (один сервер, без MySQL/Redis)."),
-            @CommentValue("sqlite — файл data/data.db (один сервер, без MySQL/Redis)."),
-            @CommentValue("mysql  — MySQL + Redis для сети из нескольких серверов."),
-            @CommentValue("Предметы скупки — в отдельном файле items.yml.")
+            @CommentValue("=== DATA STORAGE MODE ==="),
+            @CommentValue("Where the plugin stores player progress (points, categories) and market state."),
+            @CommentValue("flat   — per-player YAML + market.yml (single server, no MySQL/Redis)."),
+            @CommentValue("sqlite — data/data.db file (single server, no MySQL/Redis)."),
+            @CommentValue("mysql  — MySQL + Redis for a multi-server network."),
+            @CommentValue("Sellable items live in a separate items.yml file.")
     })
     public String storageType = "flat";
 
     @NewLine
     @Comment({
-            @CommentValue("=== ПУТИ ДАННЫХ (flat / sqlite) ==="),
-            @CommentValue("При storage-type: mysql эта секция не используется (данные в MySQL)."),
-            @CommentValue("При storage-type: flat — создаются папки/файлы ниже в plugins/SoulBuyer/.")
+            @CommentValue("=== DATA PATHS (flat / sqlite) ==="),
+            @CommentValue("When storage-type: mysql, this section is unused (data lives in MySQL)."),
+            @CommentValue("When storage-type: flat, the folders/files below are created under plugins/SoulBuyer/.")
     })
     public StorageSettings storage = new StorageSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== СЕТЬ СЕРВЕРОВ ==="),
-            @CommentValue("Для одного сервера (flat или sqlite): оставь single-server: true."),
-            @CommentValue("Для сети (mysql): у каждого сервера свой server-id, single-server: false, Redis включён.")
+            @CommentValue("=== SERVER NETWORK ==="),
+            @CommentValue("Single server (flat or sqlite): leave single-server: true."),
+            @CommentValue("Network (mysql): each server needs its own server-id, single-server: false, Redis enabled.")
     })
     public NetworkSettings network = new NetworkSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== MYSQL (только storage-type: mysql) ==="),
-            @CommentValue("При flat/sqlite эту секцию можно не трогать — плагин её игнорирует."),
-            @CommentValue("База должна существовать заранее; таблицы создаются автоматически при первом старте.")
+            @CommentValue("=== MYSQL (storage-type: mysql only) ==="),
+            @CommentValue("When using flat/sqlite, you can ignore this section — the plugin skips it."),
+            @CommentValue("The database must exist beforehand; tables are created automatically on first start.")
     })
     public MysqlSettings mysql = new MysqlSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== REDIS (только mysql + сеть) ==="),
-            @CommentValue("При flat/sqlite или single-server: true Redis не подключается."),
-            @CommentValue("Нужен для общего рынка между несколькими серверами (pub/sub синхронизация цен).")
+            @CommentValue("=== REDIS (mysql + network only) ==="),
+            @CommentValue("When flat/sqlite or single-server: true, Redis is not connected."),
+            @CommentValue("Required for a shared market across servers (pub/sub price sync).")
     })
     public RedisSettings redis = new RedisSettings();
 
     @NewLine
-    @Comment(@CommentValue("Язык сообщений и GUI: файлы lang/ru.yml, lang/en.yml"))
+    @Comment(@CommentValue("Language files and locale mode — see locale section below."))
     public LocaleSettings locale = new LocaleSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== ЭКОНОМИКА ВЫПЛАТ ==="),
-            @CommentValue("player-points-enabled — нужен плагин PlayerPoints."),
-            @CommentValue("donate-buyer-enabled: true — два меню: обычный (Vault) + донатный (/donbuyer, PlayerPoints)."),
-            @CommentValue("donate-buyer-enabled: false при включённом PlayerPoints — одно меню, выплата только в поинты.")
+            @CommentValue("=== PAYOUT ECONOMY ==="),
+            @CommentValue("player-points-enabled — requires the PlayerPoints plugin."),
+            @CommentValue("donate-buyer-enabled: true — two menus: regular (Vault) + donate (/donbuyer, PlayerPoints)."),
+            @CommentValue("donate-buyer-enabled: false with PlayerPoints enabled — one menu, payouts only in points.")
     })
     public EconomySettings economy = new EconomySettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== КОМАНДЫ ==="),
-            @CommentValue("main — основная команда. open-aliases — доп. команды на то же меню."),
-            @CommentValue("Читается из config.yml при старте сервера. После смены — перезапуск (reload не перерегистрирует команды)."),
-            @CommentValue("Пример: main buyer + open-aliases seller → /buyer и /seller."),
+            @CommentValue("=== COMMANDS ==="),
+            @CommentValue("main — primary command. open-aliases — extra commands that open the same menu."),
+            @CommentValue("Read from config.yml at server startup. After changes — restart (reload does not re-register commands)."),
+            @CommentValue("Example: main buyer + open-aliases seller → /buyer and /seller."),
     })
     public CommandsSettings commands = new CommandsSettings();
 
     @NewLine
-    @Comment(@CommentValue("Permission-ноды (можно переименовать под свой LuckPerms)"))
+    @Comment(@CommentValue("Permission nodes (rename to match your LuckPerms setup)"))
     public PermissionsSettings permissions = new PermissionsSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== ДИНАМИЧЕСКИЙ РЫНОК ==="),
-            @CommentValue("Чем больше игроки продают один ресурс — тем ниже коэффициент цены."),
-            @CommentValue("decay постепенно возвращает коэффициент к 1.0, если ресурс перестают продавать.")
+            @CommentValue("=== DYNAMIC MARKET ==="),
+            @CommentValue("The more players sell one resource, the lower its price coefficient."),
+            @CommentValue("decay gradually restores the coefficient toward 1.0 when sales stop.")
     })
     public MarketSettings market = new MarketSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== ПРОГРЕССИЯ ИГРОКА ==="),
-            @CommentValue("Очки за продажи, множители по permission, бонус от главной категории.")
+            @CommentValue("=== PLAYER PROGRESSION ==="),
+            @CommentValue("Points from sales, permission multipliers, bonus from the dominant category.")
     })
     public ProgressionSettings progression = new ProgressionSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== АВТОПРОДАЖА ==="),
-            @CommentValue("enabled — показывать кнопку и работу автопродажи на сервере."),
-            @CommentValue("Право soulbuyer.autosell — выдавать донатерам (LuckPerms).")
+            @CommentValue("=== AUTOSELL ==="),
+            @CommentValue("enabled — show the autosell button and enable autosell on this server."),
+            @CommentValue("Permission soulbuyer.autosell — grant to donors (LuckPerms).")
     })
     public AutosellSettings autosell = new AutosellSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== БУСТЕРЫ ==="),
-            @CommentValue("Магазин временных усилений в меню скупщика."),
+            @CommentValue("=== BOOSTERS ==="),
+            @CommentValue("Temporary boost shop in the buyer menu."),
             @CommentValue("currency: progression_points | vault | playerpoints")
     })
     public BoostersSettings boosters = new BoostersSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== ЛИМИТЫ ПРОДАЖ ==="),
-            @CommentValue("Персональный дневной лимит на каждый item-id (анти-демпинг)."),
-            @CommentValue("permission-limits — LuckPerms-нода → лимит шт./сутки (берётся максимальный).")
+            @CommentValue("=== SELL LIMITS ==="),
+            @CommentValue("Per-player daily limit per item-id (anti-dumping)."),
+            @CommentValue("permission-limits — LuckPerms node → items/day (highest granted value wins).")
     })
     public SellLimitsSettings sellLimits = new SellLimitsSettings();
 
     @NewLine
     @Comment({
-            @CommentValue("=== КАТЕГОРИИ РЕСУРСОВ ==="),
-            @CommentValue("id категории → ключ названия в lang/*.yml (categories.ores и т.д.)."),
-            @CommentValue("order — порядок в GUI каталога (меньше = выше).")
+            @CommentValue("=== RESOURCE CATEGORIES ==="),
+            @CommentValue("category id → name key in lang/*.yml (categories.ores, etc.)."),
+            @CommentValue("order — sort order in the catalog GUI (lower = higher).")
     })
     public Map<String, CategorySettings> categories = defaultCategories();
 
     public static final class StorageSettings {
-        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/players/{uuid}.yml — очки и XP категорий"))
+        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/players/{uuid}.yml — points and category XP"))
         public String playersFolder = "data/players";
 
-        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/autosell/{uuid}.yml — настройки автопродажи"))
+        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/autosell/{uuid}.yml — autosell settings"))
         public String autosellFolder = "data/autosell";
 
-        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/boosters/{uuid}.yml — активные бустеры"))
+        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/boosters/{uuid}.yml — active boosters"))
         public String boostersFolder = "data/boosters";
 
-        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/global-boosters.yml — серверные бустеры"))
+        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/global-boosters.yml — server-wide boosters"))
         public String globalBoostersFile = "data/global-boosters.yml";
 
-        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/sell-limits/{uuid}.yml — продажи за период"))
+        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/sell-limits/{uuid}.yml — sales in the current period"))
         public String sellLimitsFolder = "data/sell-limits";
 
-        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/market.yml — коэффициенты рынка"))
+        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/market.yml — market coefficients"))
         public String marketFile = "data/market.yml";
 
-        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/rotation.yml — текущая ротация скупщика"))
+        @Comment(@CommentValue("flat: plugins/SoulBuyer/data/rotation.yml — current buyer catalog rotation"))
         public String rotationFile = "data/rotation.yml";
 
-        @Comment(@CommentValue("flat/sqlite: plugins/SoulBuyer/data/sales.log — журнал продаж"))
+        @Comment(@CommentValue("flat/sqlite: plugins/SoulBuyer/data/sales.log — sales log"))
         public String salesLogFile = "data/sales.log";
 
-        @Comment(@CommentValue("sqlite: plugins/SoulBuyer/data/data.db — файл SQLite"))
+        @Comment(@CommentValue("sqlite: plugins/SoulBuyer/data/data.db — SQLite database file"))
         public String sqliteFile = "data/data.db";
 
-        @Comment(@CommentValue("sqlite: размер пула JDBC (обычно хватает 4)"))
+        @Comment(@CommentValue("sqlite: JDBC pool size (4 is usually enough)"))
         public int poolSize = 4;
 
-        @Comment(@CommentValue("sqlite: таймаут подключения к БД, мс"))
+        @Comment(@CommentValue("sqlite: database connection timeout, ms"))
         public long connectionTimeoutMs = 30000L;
     }
 
     public static final class NetworkSettings {
-        @Comment(@CommentValue("Уникальный id этого Paper-сервера (server-1, lobby, survival-1, …)"))
+        @Comment(@CommentValue("Unique id of this Paper server (server-1, lobby, survival-1, …)"))
         public String serverId = "server-1";
 
         @Comment({
-                @CommentValue("true  — один сервер: Redis выключен, рынок локальный."),
-                @CommentValue("false — сеть: нужны mysql + redis.enabled: true")
+                @CommentValue("true  — single server: Redis disabled, local market."),
+                @CommentValue("false — network: requires mysql + redis.enabled: true")
         })
         public boolean singleServer = true;
     }
 
     public static final class MysqlSettings {
-        @Comment(@CommentValue("Хост MySQL (127.0.0.1 или IP VPS)"))
+        @Comment(@CommentValue("MySQL host (127.0.0.1 or VPS IP)"))
         public String host = "127.0.0.1";
 
         public int port = 3306;
 
-        @Comment(@CommentValue("Имя базы (создай пустую БД до первого запуска)"))
+        @Comment(@CommentValue("Database name (create an empty DB before first startup)"))
         public String database = "soulbuyer";
 
         public String user = "root";
         public String password = "";
 
-        @Comment(@CommentValue("Размер пула HikariCP"))
+        @Comment(@CommentValue("HikariCP pool size"))
         public int poolSize = 10;
 
         public long connectionTimeoutMs = 30000L;
     }
 
     public static final class RedisSettings {
-        @Comment(@CommentValue("false — принудительно без Redis (даже в сети, не рекомендуется)"))
+        @Comment(@CommentValue("false — force Redis off (even on a network; not recommended)"))
         public boolean enabled = true;
 
         public String host = "127.0.0.1";
         public int port = 6379;
         public String password = "";
 
-        @Comment(@CommentValue("Номер Redis DB (0–15 на большинстве хостингов)"))
+        @Comment(@CommentValue("Redis DB index (0–15 on most hosts)"))
         public int database = 0;
 
-        @Comment(@CommentValue("Канал pub/sub для обновления цен между серверами"))
+        @Comment(@CommentValue("Pub/sub channel for price updates across servers"))
         public String marketChannel = "soulbuyer:market";
 
-        @Comment(@CommentValue("Канал pub/sub для глобальных бустеров между серверами"))
+        @Comment(@CommentValue("Pub/sub channel for global boosters across servers"))
         public String globalBoostersChannel = "soulbuyer:global-boosters";
 
-        @Comment(@CommentValue("TTL кэша коэффициентов в Redis, сек"))
+        @Comment(@CommentValue("Market coefficient cache TTL in Redis, seconds"))
         public long cacheTtlSeconds = 300L;
     }
 
+    public static final class BstatsSettings {
+
+        @Comment({@CommentValue("Send anonymous metrics to https://bstats.org")})
+        public boolean enabled = true;
+    }
+
     public static final class LocaleSettings {
-        @Comment(@CommentValue("Язык по умолчанию, если у клиента игрока нет ru/en"))
-        public String defaultLocale = "ru";
+        @Comment({
+                @CommentValue("=== Plugin language (GUI, button lore, chat, command errors) ==="),
+                @CommentValue("Strings live in plugins/SoulBuyer/lang/<code>.yml"),
+                @CommentValue("The plugin does not translate for you — it picks the matching file."),
+                @CommentValue("Edit YAML or copy en.yml to your own xx.yml."),
+                @CommentValue("After lang changes: /soulbuyer admin reload (or restart the server)."),
+                @CommentValue(""),
+                @CommentValue("How to pick the language for players (locale-mode):"),
+                @CommentValue(""),
+                @CommentValue("CLIENT — default. Uses each player's Minecraft language setting:"),
+                @CommentValue("  • lang/<code>.yml exists for the client language → that file"),
+                @CommentValue("  • ru / ru_ru → ru.yml (when present)"),
+                @CommentValue("  • otherwise → fallback-locale (usually en)"),
+                @CommentValue("  Good when the server has mixed RU and EN players."),
+                @CommentValue(""),
+                @CommentValue("SERVER — one language for everyone:"),
+                @CommentValue("  • set server-locale below (e.g. ru)"),
+                @CommentValue("  • player client language is ignored"),
+                @CommentValue("  • everyone sees the same strings from one YAML"),
+                @CommentValue(""),
+                @CommentValue("Allowed locale-mode: CLIENT or SERVER (case-insensitive)."),
+                @CommentValue(""),
+                @CommentValue("Server-wide locale (server-locale). Only used when locale-mode: SERVER."),
+                @CommentValue("Code = file name: plugins/SoulBuyer/lang/<code>.yml"),
+                @CommentValue("Bundled in JAR: en, ru, fi. Any *.yml in lang/ is loaded on startup and reload."),
+                @CommentValue(""),
+                @CommentValue("Example — Russian for everyone:"),
+                @CommentValue("  locale-mode: SERVER"),
+                @CommentValue("  server-locale: ru"),
+                @CommentValue(""),
+                @CommentValue("Example — English for everyone:"),
+                @CommentValue("  locale-mode: SERVER"),
+                @CommentValue("  server-locale: en"),
+                @CommentValue(""),
+                @CommentValue("Custom locale: add lang/de.yml and set server-locale: de"),
+                @CommentValue("(server-locale is ignored when locale-mode is CLIENT)."),
+                @CommentValue(""),
+                @CommentValue("Missing keys in a locale file are taken from fallback-locale."),
+        })
+        public String localeMode = "CLIENT";
+
+        public String serverLocale = "en";
 
         @Comment({
-                @CommentValue("Запасной язык для отсутствующих ключей"),
-                @CommentValue("ru/en у клиента Minecraft подхватываются автоматически")
+                @CommentValue("Fallback locale: missing keys in a file + CLIENT when no lang/<code>.yml matches."),
+                @CommentValue("Usually en."),
         })
         public String fallbackLocale = "en";
     }
 
     public static final class EconomySettings {
         @Comment({
-                @CommentValue("true — выплаты через PlayerPoints; false — через Vault."),
-                @CommentValue("На Folia без Vault: поставь PlayerPoints и true, либо плагин сам переключится, если Vault нет, а PP есть.")
+                @CommentValue("true — payouts via PlayerPoints; false — via Vault."),
+                @CommentValue("On Folia without Vault: install PlayerPoints and set true, or the plugin auto-switches if Vault is missing but PP is present.")
         })
         public boolean playerPointsEnabled = false;
 
-        @Comment(@CommentValue("true — отдельное донатное меню за PlayerPoints + обычное за Vault"))
+        @Comment(@CommentValue("true — separate donate menu paid in PlayerPoints + regular menu paid in Vault"))
         public boolean donateBuyerEnabled = false;
     }
 
@@ -248,8 +310,8 @@ public final class SoulBuyerSettings extends YamlSerializable {
         public String main = "soulbuyer";
 
         @Comment({
-                @CommentValue("Привычные алиасы для игроков (англ.):"),
-                @CommentValue("buyer, sell, sb, rbuyer — открывают меню скупщика")
+                @CommentValue("Common player-facing aliases (English):"),
+                @CommentValue("buyer, sell, sb, rbuyer — open the buyer menu")
         })
         public List<String> openAliases = defaultOpenAliases();
 
@@ -259,7 +321,7 @@ public final class SoulBuyerSettings extends YamlSerializable {
     public static final class DonateBuyerCommandsSettings {
         public String main = "donbuyer";
 
-        @Comment(@CommentValue("Алиасы донатного скупщика: /dbuyer, /ppbuyer, …"))
+        @Comment(@CommentValue("Donate buyer aliases: /dbuyer, /ppbuyer, …"))
         public List<String> openAliases = defaultDonateOpenAliases();
     }
 
@@ -272,148 +334,148 @@ public final class SoulBuyerSettings extends YamlSerializable {
     }
 
     public static final class MarketSettings {
-        @Comment(@CommentValue("Нижняя граница коэффициента (0.25 = цена не упадёт ниже 25% от базовой)"))
+        @Comment(@CommentValue("Lower bound of the coefficient (0.25 = price won't drop below 25% of base)"))
         public double minCoefficient = 0.25D;
 
-        @Comment(@CommentValue("На сколько падает коэффициент за каждую проданную единицу item-id"))
+        @Comment(@CommentValue("How much the coefficient drops per sold unit of an item-id"))
         public double dropPerUnit = 0.0005D;
 
-        @Comment(@CommentValue("На сколько коэффициент растёт к 1.0 за один tick decay"))
+        @Comment(@CommentValue("How much the coefficient rises toward 1.0 per decay tick"))
         public double decayPerInterval = 0.002D;
 
-        @Comment(@CommentValue("Как часто запускать decay, сек"))
+        @Comment(@CommentValue("How often to run decay, seconds"))
         public int decayIntervalSeconds = 300;
 
-        @Comment(@CommentValue("Как часто сбрасывать буфер продаж на диск/БД, мс"))
+        @Comment(@CommentValue("How often to flush the sales buffer to disk/DB, ms"))
         public long saleFlushIntervalMs = 5000L;
 
-        @Comment(@CommentValue("Сколько записей продаж писать одним batch"))
+        @Comment(@CommentValue("How many sale records to write per batch"))
         public int saleFlushBatchSize = 100;
     }
 
     @NewLine
     @Comment({
-            @CommentValue("=== РОТАЦИЯ АССОРТИМЕНТА СКУПЩИКА ==="),
-            @CommentValue("Периодически меняет набор скупаемых предметов и сбрасывает рыночные коэффициенты,"),
-            @CommentValue("чтобы цены не застревали слишком высокими/низкими от массовых продаж."),
-            @CommentValue("Полный список предметов — в items.yml; здесь только правила ротации.")
+            @CommentValue("=== BUYER CATALOG ROTATION ==="),
+            @CommentValue("Periodically changes which items are buyable and resets market coefficients,"),
+            @CommentValue("so prices don't stay stuck too high/low from mass selling."),
+            @CommentValue("Full item list is in items.yml; only rotation rules are configured here.")
     })
     public CatalogRotationSettings catalogRotation = new CatalogRotationSettings();
 
     public static final class CatalogRotationSettings {
 
-        @Comment(@CommentValue("true — включить смену ассортимента по таймеру; false — скупается всё из items.yml"))
+        @Comment(@CommentValue("true — rotate the catalog on a timer; false — buy everything from items.yml"))
         public boolean enabled = true;
 
-        @Comment(@CommentValue("Через сколько секунд менять набор предметов (3600 = 1 час)"))
+        @Comment(@CommentValue("Seconds between catalog changes (3600 = 1 hour)"))
         public int intervalSeconds = 3600;
 
-        @Comment(@CommentValue("Сколько предметов одновременно в скупщике (из всего пула items.yml)"))
+        @Comment(@CommentValue("How many items are active at once (from the full items.yml pool)"))
         public int activeItemCount = 48;
 
-        @Comment(@CommentValue("Минимум предметов из каждой категории в одной ротации (если хватает в пуле)"))
+        @Comment(@CommentValue("Minimum items from each category in one rotation (when enough exist in the pool)"))
         public int minItemsPerCategory = 4;
 
-        @Comment(@CommentValue("Сбросить коэффициенты рынка на 1.0 для нового набора при каждой ротации"))
+        @Comment(@CommentValue("Reset market coefficients to 1.0 for the new set on each rotation"))
         public boolean resetMarketOnRotation = true;
 
         @NewLine
-        @Comment(@CommentValue("Оповещение игроков в чат при смене ассортимента"))
+        @Comment(@CommentValue("Notify players in chat when the catalog changes"))
         public NotifySettings notify = new NotifySettings();
 
         public static final class NotifySettings {
 
-            @Comment(@CommentValue("true — писать в чат; false — тихая смена"))
+            @Comment(@CommentValue("true — chat message; false — silent rotation"))
             public boolean enabled = true;
         }
     }
 
     @NewLine
     @Comment({
-            @CommentValue("=== АНИМАЦИЯ ИКОНОК КАТЕГОРИЙ В GUI ==="),
-            @CommentValue("На кнопках фильтров по таймеру показываются реальные предметы из текущего ассортимента скупщика."),
-            @CommentValue("Имя и lore кнопки остаются из lang; меняется только иконка.")
+            @CommentValue("=== CATEGORY ICON ANIMATION IN GUI ==="),
+            @CommentValue("Category filter buttons cycle real items from the current buyer catalog on a timer."),
+            @CommentValue("Button name and lore stay from lang; only the icon changes.")
     })
     public CategoryIconAnimationSettings categoryIconAnimation = new CategoryIconAnimationSettings();
 
     public static final class CategoryIconAnimationSettings {
 
-        @Comment(@CommentValue("true — крутить превью предметов на кнопках категорий; false — статичный material из gui/buyer.yml"))
+        @Comment(@CommentValue("true — cycle item previews on category buttons; false — static material from gui/buyer.yml"))
         public boolean enabled = true;
 
-        @Comment(@CommentValue("Как часто менять иконку, сек (минимум 1)"))
+        @Comment(@CommentValue("How often to change the icon, seconds (minimum 1)"))
         public int intervalSeconds = 3;
     }
 
     public static final class ProgressionSettings {
-        @Comment(@CommentValue("LuckPerms-нода → множитель к деньгам и очкам (берётся максимальный из выданных)"))
+        @Comment(@CommentValue("LuckPerms node → money and points multiplier (highest granted value wins)"))
         public Map<String, Double> permissionMultipliers = defaultPermissionMultipliers();
 
-        @Comment(@CommentValue("false — не начислять progression-очки и category XP за продажи"))
+        @Comment(@CommentValue("false — don't award progression points and category XP from sales"))
         public boolean awardPoints = true;
 
-        @Comment(@CommentValue("Доп. очки за каждую монету Vault-валюты от продажи (если award-points: true)"))
+        @Comment(@CommentValue("Extra points per Vault currency unit earned from a sale (if award-points: true)"))
         public double pointsPerCurrency = 0.1D;
 
-        @Comment(@CommentValue("+% к доходу за каждый уровень XP в доминирующей категории"))
+        @Comment(@CommentValue("+% income per level of XP in the dominant category"))
         public double dominantCategoryBonusPerLevel = 0.5D;
 
-        @Comment(@CommentValue("Сколько category-xp = 1 уровень для бонуса (не сырой XP)"))
+        @Comment(@CommentValue("How much category XP equals 1 level for the bonus (not raw XP)"))
         public double categoryXpPerLevel = 1000.0D;
 
-        @Comment(@CommentValue("Потолок множителя от категории (1.0 = без бонуса, 2.5 = +150%)"))
+        @Comment(@CommentValue("Cap on the category income multiplier (1.0 = no bonus, 2.5 = +150%)"))
         public double maxCategoryBonus = 2.5D;
 
-        @Comment(@CommentValue("Макс. цена за 1 шт. в расчёте (защита от разгона)"))
+        @Comment(@CommentValue("Max price per unit in calculations (runaway protection)"))
         public double maxUnitPrice = 1_000_000.0D;
 
-        @Comment(@CommentValue("Макс. выплата Vault/PlayerPoints за одну продажу"))
+        @Comment(@CommentValue("Max Vault/PlayerPoints payout per single sale"))
         public double maxPayoutPerSale = 50_000_000.0D;
 
-        @Comment(@CommentValue("Сколько XP категории начислять за 1 заработанное очко"))
+        @Comment(@CommentValue("How much category XP to award per progression point earned"))
         public double categoryXpPerPoint = 1.0D;
     }
 
     public static final class AutosellSettings {
-        @Comment(@CommentValue("false — кнопка автопродажи заменяется стеклом, подбор не продаёт"))
+        @Comment(@CommentValue("false — autosell button replaced with glass, pickup does not sell"))
         public boolean enabled = true;
 
-        @Comment(@CommentValue("Задержка в тиках после подбора перед продажей"))
+        @Comment(@CommentValue("Delay in ticks after pickup before selling"))
         public int pickupDelayTicks = 1;
 
-        @Comment(@CommentValue("Новый игрок: автопродажа выключена"))
+        @Comment(@CommentValue("New players: autosell disabled by default"))
         public boolean defaultEnabled = false;
 
-        @Comment(@CommentValue("pickup — при подборе | buyer — при открытии меню | chest — продажа содержимого сундука при открытии"))
+        @Comment(@CommentValue("pickup — on pickup | buyer — when opening the menu | chest — sell chest contents on open"))
         public String defaultTrigger = "pickup";
 
         @Comment(@CommentValue("actionbar | chat | off"))
         public String defaultNotify = "actionbar";
 
-        @Comment(@CommentValue("Не продавать предметы дешевле этой цены за шт. (после рынка и множителей)"))
+        @Comment(@CommentValue("Don't sell items below this price per unit (after market and multipliers)"))
         public double defaultMinUnitPrice = 0D;
 
-        @Comment(@CommentValue("Категории по умолчанию для автопродажи"))
+        @Comment(@CommentValue("Default categories for autosell"))
         public List<String> defaultCategories = List.of("ores", "mobs", "plants", "blocks", "misc");
 
-        @Comment(@CommentValue("Шаги минимальной цены в GUI (цикл кнопки)"))
+        @Comment(@CommentValue("Minimum price steps in the GUI (button cycles through these)"))
         public List<Double> minUnitPriceSteps = List.of(0D, 1D, 5D, 10D, 50D);
 
-        @Comment(@CommentValue("Куда платить при dual buyer: vault | player-points (только если economy.donate-buyer-enabled)"))
+        @Comment(@CommentValue("Where to pay when dual buyer is enabled: vault | player-points (only if economy.donate-buyer-enabled)"))
         public String defaultPayout = "vault";
     }
 
     public static final class BoostersSettings {
-        @Comment(@CommentValue("false — кнопка бустеров скрыта, покупка недоступна"))
+        @Comment(@CommentValue("false — boosters button hidden, purchases disabled"))
         public boolean enabled = true;
 
-        @Comment(@CommentValue("false — админ-команды глобальных бустеров и их эффект выключены"))
+        @Comment(@CommentValue("false — admin global booster commands and their effect disabled"))
         public boolean globalEnabled = true;
 
         @Comment(@CommentValue("progression_points | vault | playerpoints"))
         public String currency = "progression_points";
 
-        @Comment(@CommentValue("id предложения → параметры бустера"))
+        @Comment(@CommentValue("offer id → booster parameters"))
         public Map<String, BoosterOfferSettings> offers = defaultBoosterOffers();
     }
 
@@ -421,38 +483,38 @@ public final class SoulBuyerSettings extends YamlSerializable {
         @Comment(@CommentValue("multiplier | money | limit"))
         public String type = "multiplier";
 
-        @Comment(@CommentValue("multiplier: +к множителю; money/limit: множитель эффекта (1.25, 2.0)"))
+        @Comment(@CommentValue("multiplier: added to multiplier; money/limit: effect multiplier (1.25, 2.0)"))
         public double effect = 0.5D;
 
-        @Comment(@CommentValue("Длительность бустера, сек"))
+        @Comment(@CommentValue("Booster duration, seconds"))
         public int durationSeconds = 3600;
 
-        @Comment(@CommentValue("Цена в валюте boosters.currency"))
+        @Comment(@CommentValue("Price in boosters.currency"))
         public double price = 125D;
 
-        @Comment(@CommentValue("Material иконки в GUI бустеров"))
+        @Comment(@CommentValue("Icon material in the boosters GUI"))
         public String material = "EXPERIENCE_BOTTLE";
 
-        @Comment(@CommentValue("Ключ названия в lang/*.yml"))
+        @Comment(@CommentValue("Name key in lang/*.yml"))
         public String nameKey = "gui.boosters.offer-multiplier";
 
-        @Comment(@CommentValue("Ключи lore в lang/*.yml"))
+        @Comment(@CommentValue("Lore keys in lang/*.yml"))
         public List<String> loreKeys = List.of("gui.boosters.offer-lore");
     }
 
     public static final class SellLimitsSettings {
-        @Comment(@CommentValue("false — лимиты не проверяются"))
+        @Comment(@CommentValue("false — limits are not checked"))
         public boolean enabled = true;
 
-        @Comment(@CommentValue("Лимит шт./сутки на item-id без спец. permission"))
+        @Comment(@CommentValue("Default items/day per item-id without a special permission"))
         public int defaultPerItem = 64;
 
-        @Comment(@CommentValue("LuckPerms-нода → лимит шт./сутки (максимум из выданных)"))
+        @Comment(@CommentValue("LuckPerms node → items/day (highest granted value wins)"))
         public Map<String, Integer> permissionLimits = defaultSellLimitPermissions();
     }
 
     public static final class CategorySettings {
-        @Comment(@CommentValue("Ключ в lang/*.yml, например categories.ores"))
+        @Comment(@CommentValue("Key in lang/*.yml, e.g. categories.ores"))
         public String langKey = "";
 
         public int order = 0;
@@ -467,7 +529,7 @@ public final class SoulBuyerSettings extends YamlSerializable {
         @Serializer(SoulBuyerSerializerConfig.NullableCmdSerializer.class)
         public Integer customModelData = -1;
 
-        @Comment(@CommentValue("Material иконки в GUI (пусто = авто: PAPER+model или превью trim на нагруднике для шаблонов кузнеца)"))
+        @Comment(@CommentValue("GUI icon material (empty = auto: PAPER+model or trim preview on chestplate for smithing templates)"))
         public String displayMaterial = "";
     }
 

@@ -1,10 +1,11 @@
 plugins {
     id 'java'
+    id 'com.gradleup.shadow' version '9.3.1'
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 group = 'bm.b0b0b0.soulBuyer'
-version = '1.3.21'
+version = '1.4.0'
 
 repositories {
     mavenCentral()
@@ -36,6 +37,7 @@ dependencies {
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
     compileOnly("org.black_ixx:playerpoints:3.3.3")
     compileOnly("me.clip:placeholderapi:2.11.6")
+    implementation("org.bstats:bstats-bukkit:3.2.1")
 }
 
 tasks {
@@ -68,4 +70,26 @@ processResources {
     filesMatching('plugin.yml') {
         expand props
     }
+}
+
+jar {
+    enabled = false
+}
+
+shadowJar {
+    archiveClassifier.set('')
+
+    configurations = [project.configurations.runtimeClasspath]
+
+    dependencies {
+        exclude { details ->
+            details.moduleGroup != 'org.bstats'
+        }
+    }
+
+    relocate 'org.bstats', 'bm.b0b0b0.soulBuyer.lib.bstats'
+}
+
+build {
+    dependsOn shadowJar
 }

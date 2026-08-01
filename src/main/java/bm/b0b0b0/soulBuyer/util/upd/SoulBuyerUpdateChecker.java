@@ -1,14 +1,13 @@
 package bm.b0b0b0.soulBuyer.util.upd;
 
 import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class SoulBuyerUpdateChecker {
 
@@ -28,7 +27,7 @@ public final class SoulBuyerUpdateChecker {
         try {
             String latestVersion = fetchLatestVersion();
             if (latestVersion == null) {
-                SoulBuyerConsole.error("Не удалось проверить обновления: не прочитана актуальная версия.");
+                SoulBuyerConsole.error("Update check failed: could not read latest version.");
                 return;
             }
             if (!currentVersion.equalsIgnoreCase(latestVersion)) {
@@ -36,20 +35,20 @@ public final class SoulBuyerUpdateChecker {
                 return;
             }
             SoulBuyerConsole.line(SoulBuyerConsole.green("\u2713 ")
-                    + "Проверка обновлений: установлена актуальная версия "
+                    + "Update check: running latest version "
                     + SoulBuyerConsole.green(currentVersion) + ".");
         } catch (Exception exception) {
-            SoulBuyerConsole.error("Ошибка проверки обновлений: " + exception.getMessage());
+            SoulBuyerConsole.error("Update check error: " + exception.getMessage());
         }
     }
 
     private static void printOutdated(String currentVersion, String latestVersion) {
         SoulBuyerConsole.blank();
         SoulBuyerConsole.line(SoulBuyerConsole.border());
-        SoulBuyerConsole.warn("Доступна новая версия SoulBuyer!");
-        SoulBuyerConsole.line("  Текущая: " + SoulBuyerConsole.gray(currentVersion));
-        SoulBuyerConsole.line("  Актуальная: " + SoulBuyerConsole.green(latestVersion));
-        SoulBuyerConsole.line("  Скачать: " + SoulBuyerConsole.gray(RESOURCE_URL));
+        SoulBuyerConsole.warn("A new SoulBuyer version is available!");
+        SoulBuyerConsole.line("  Current: " + SoulBuyerConsole.gray(currentVersion));
+        SoulBuyerConsole.line("  Latest: " + SoulBuyerConsole.green(latestVersion));
+        SoulBuyerConsole.line("  Download: " + SoulBuyerConsole.gray(RESOURCE_URL));
         SoulBuyerConsole.line(SoulBuyerConsole.border());
         SoulBuyerConsole.blank();
     }
@@ -66,7 +65,7 @@ public final class SoulBuyerUpdateChecker {
                 return line == null ? null : line.trim();
             }
         } catch (IOException exception) {
-            SoulBuyerConsole.error("Ошибка подключения к " + VERSION_URL + ": " + exception.getMessage());
+            SoulBuyerConsole.error("Connection error to " + VERSION_URL + ": " + exception.getMessage());
             return null;
         }
     }

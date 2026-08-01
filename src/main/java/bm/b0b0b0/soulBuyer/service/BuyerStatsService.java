@@ -157,7 +157,7 @@ public final class BuyerStatsService {
     private Locale localeOf(Player player) {
         String code = messageService.locale(player);
         if (code == null || code.isBlank()) {
-            return Locale.forLanguageTag(config.defaultLocale());
+            return Locale.forLanguageTag(config.fallbackLocale());
         }
         return Locale.forLanguageTag(code);
     }

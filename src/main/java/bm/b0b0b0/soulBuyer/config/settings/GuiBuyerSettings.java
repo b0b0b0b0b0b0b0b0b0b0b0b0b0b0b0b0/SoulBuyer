@@ -14,14 +14,14 @@ public final class GuiBuyerSettings extends YamlSerializable {
         super(SoulBuyerSerializerConfig.INSTANCE);
     }
 
-    @Comment(@CommentValue("Ключ заголовка окна в lang/*.yml"))
+    @Comment(@CommentValue("Window title key in lang/*.yml"))
     public String titleKey = "gui.buyer.title";
 
     @NewLine
     @Comment({
-            @CommentValue("Ключи lang для иконок скупаемых предметов в сетке GUI."),
-            @CommentValue("Плейсхолдеры: {name} {id} {material} {category} {price} {points} {market} {multiplier} {amount}"),
-            @CommentValue("Пустая строка в lore: \" \" или <empty> / <blank>")
+            @CommentValue("Lang keys for sellable item icons in the GUI grid."),
+            @CommentValue("Placeholders: {name} {id} {material} {category} {price} {points} {market} {multiplier} {amount}"),
+            @CommentValue("Empty lore line: \" \" or <empty> / <blank>")
     })
     public String itemNameKey = "gui.buyer.item-name";
     public String itemLoreKey = "gui.buyer.item-lore";
@@ -29,21 +29,21 @@ public final class GuiBuyerSettings extends YamlSerializable {
     public String itemSellHintKey = "gui.buyer.item-sell-hint";
     public String itemEmptyHintKey = "gui.buyer.item-empty-hint";
 
-    @Comment(@CommentValue("true — скрыть ванильный lore предмета (шаблоны, «применяется к», муз. диски и т.д.)"))
+    @Comment(@CommentValue("true — hide vanilla item lore (templates, \"applies to\", music discs, etc.)"))
     public boolean hideVanillaItemTooltip = true;
 
-    @Comment(@CommentValue("Размер GUI (54 = 6 рядов). Не меняй без правки слотов ниже."))
+    @Comment(@CommentValue("GUI size (54 = 6 rows). Do not change without updating slots below."))
     public int size = 54;
 
     @Comment({
-            @CommentValue("Разделитель между категориями и сеткой продажи (стеклянные панели)."),
-            @CommentValue("По умолчанию слоты 10–16 — второй ряд под фильтрами категорий.")
+            @CommentValue("Separator between categories and the sell grid (glass panes)."),
+            @CommentValue("By default slots 10–16 — second row under category filters.")
     })
     public List<Integer> separatorSlots = List.of(10, 11, 12, 13, 14, 15, 16);
 
     @Comment({
-            @CommentValue("Рабочие слоты — иконки скупаемых предметов с ценами."),
-            @CommentValue("Клик — мгновенная продажа всего такого ресурса из инвентаря.")
+            @CommentValue("Working slots — sellable item icons with prices."),
+            @CommentValue("Click — instant sell of all matching items from inventory.")
     })
     public List<Integer> contentSlots = List.of(
             19, 20, 21, 22, 23, 24, 25,
@@ -53,19 +53,19 @@ public final class GuiBuyerSettings extends YamlSerializable {
 
     @NewLine
     @Comment({
-            @CommentValue("Кнопки и шаблоны фона главного меню /buyer."),
-            @CommentValue("border / separator — шаблоны фона (slot: -1). Имена: lang → gui.buyer.border / separator."),
-            @CommentValue("separator-slots — где рисуется separator вместо border."),
+            @CommentValue("Buttons and background templates for the main /buyer menu."),
+            @CommentValue("border / separator — background templates (slot: -1). Names: lang → gui.buyer.border / separator."),
+            @CommentValue("separator-slots — where separator is drawn instead of border."),
             @CommentValue("action:"),
-            @CommentValue("  DECORATION — декор (статы, часы, заглушки); клик игнорируется"),
-            @CommentValue("  SELL_ALL — продать всё из инвентаря"),
-            @CommentValue("  CATEGORY_FILTER — фильтр категории (+ category-filter: ores/mobs/…)"),
-            @CommentValue("  SORT_CYCLE — переключить сортировку"),
-            @CommentValue("  PAGE_PREV / PAGE_NEXT — страницы товаров"),
-            @CommentValue("  AUTOSELL — меню автопродажи"),
-            @CommentValue("  BOOSTERS — меню бустеров"),
-            @CommentValue("  NONE — заглушка (бустеры/автопродажа выключены)"),
-            @CommentValue("offer-id здесь не используется — оставь \"\".")
+            @CommentValue("  DECORATION — decor (stats, clock, placeholders); clicks are ignored"),
+            @CommentValue("  SELL_ALL — sell everything from inventory"),
+            @CommentValue("  CATEGORY_FILTER — category filter (+ category-filter: ores/mobs/…)"),
+            @CommentValue("  SORT_CYCLE — cycle sort order"),
+            @CommentValue("  PAGE_PREV / PAGE_NEXT — item pages"),
+            @CommentValue("  AUTOSELL — autosell menu"),
+            @CommentValue("  BOOSTERS — boosters menu"),
+            @CommentValue("  NONE — placeholder (boosters/autosell disabled)"),
+            @CommentValue("offer-id is unused here — leave \"\".")
     })
     public Map<String, GuiGeneralSettings.GuiElementSettings> elements = defaultElements();
 

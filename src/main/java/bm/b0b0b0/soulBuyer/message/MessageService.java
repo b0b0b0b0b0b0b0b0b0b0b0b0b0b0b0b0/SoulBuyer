@@ -2,11 +2,10 @@ package bm.b0b0b0.soulBuyer.message;
 
 import bm.b0b0b0.soulBuyer.integration.PlaceholderApiBridge;
 import bm.b0b0b0.soulBuyer.util.PluginSchedulers;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
+import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -17,9 +16,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class MessageService {
 
     private final MessageLoader loader;
-    private final Map<UUID, String> playerLocales = new HashMap<>();
     private PlaceholderApiBridge placeholderApiBridge;
     private boolean disableGuiItemItalic = true;
+    private Supplier<String> forcedLocaleId = () -> null;
 
     public MessageService(MessageLoader loader) {
         this.loader = loader;
@@ -33,16 +32,31 @@ public final class MessageService {
         this.disableGuiItemItalic = disableGuiItemItalic;
     }
 
+    public void setForcedLocaleSupplier(Supplier<String> forcedLocaleId) {
+        this.forcedLocaleId = forcedLocaleId != null ? forcedLocaleId : () -> null;
+    }
+
+    public List<String> loadedLocaleIds() {
+        return loader.loadedLocaleIds();
+    }
+
     public String locale(Player player) {
-        String override = playerLocales.get(player.getUniqueId());
-        if (override != null) {
-            return override;
+        String configured = configuredLocaleId();
+        if (configured != null) {
+            return configured;
         }
-        String clientLanguage = player.locale().getLanguage().toLowerCase(Locale.ROOT);
-        if (loader.containsLocale(clientLanguage)) {
-            return clientLanguage;
+        if (player == null) {
+            return loader.fallbackLocale();
         }
-        return loader.defaultLocale();
+        return normalizeLocaleId(player.locale());
+    }
+
+    public String locale(CommandSender sender) {
+        if (sender instanceof Player player) {
+            return locale(player);
+        }
+        String configured = configuredLocaleId();
+        return configured != null ? configured : loader.fallbackLocale();
     }
 
     public Component component(Player player, String key, String... pairs) {
@@ -156,7 +170,7 @@ public final class MessageService {
             return;
         }
         sender.sendMessage(HexColorParser.parse(
-                HexColorParser.replacePlaceholders(loader.raw(loader.defaultLocale(), key), pairs)
+                HexColorParser.replacePlaceholders(loader.raw(locale(sender), key), pairs)
         ));
     }
 
@@ -175,5 +189,66 @@ public final class MessageService {
                 PluginSchedulers.runGlobal(plugin, onComplete);
             }
         });
+    }
+
+    private String configuredLocaleId() {
+        String raw = forcedLocaleId.get();
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return normalizeBundledLocaleId(raw);
+    }
+
+    private String normalizeBundledLocaleId(String raw) {
+        String language = raw.toLowerCase(Locale.ROOT).trim();
+        if (loader.containsLocale(language)) {
+            return normalizeLocaleId(language);
+        }
+        if (language.startsWith("ru") && loader.containsLocale("ru")) {
+            return "ru";
+        }
+        if (language.startsWith("en") && loader.containsLocale("en")) {
+            return "en";
+        }
+        int separator = language.indexOf('-');
+        if (separator > 0) {
+            String base = language.substring(0, separator);
+            if (loader.containsLocale(base)) {
+                return base;
+            }
+        }
+        return loader.fallbackLocale();
+    }
+
+    private String normalizeLocaleId(Locale locale) {
+        if (locale == null) {
+            return loader.fallbackLocale();
+        }
+        String language = locale.getLanguage().toLowerCase(Locale.ROOT);
+        if (!language.isBlank() && loader.containsLocale(language)) {
+            return language;
+        }
+        String tag = locale.toLanguageTag().toLowerCase(Locale.ROOT);
+        if (loader.containsLocale(tag)) {
+            return tag;
+        }
+        int separator = tag.indexOf('-');
+        if (separator > 0) {
+            String base = tag.substring(0, separator);
+            if (loader.containsLocale(base)) {
+                return base;
+            }
+        }
+        if (tag.startsWith("ru") && loader.containsLocale("ru")) {
+            return "ru";
+        }
+        return loader.fallbackLocale();
+    }
+
+    private String normalizeLocaleId(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return loader.fallbackLocale();
+        }
+        return normalizeBundledLocaleId(raw);
     }
 }

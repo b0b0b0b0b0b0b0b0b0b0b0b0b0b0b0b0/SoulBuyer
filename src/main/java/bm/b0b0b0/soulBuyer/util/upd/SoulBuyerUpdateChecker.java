@@ -13,6 +13,8 @@ public final class SoulBuyerUpdateChecker {
 
     private static final String VERSION_URL = "https://b0b0b0.dev/pl/souls/soulbuyer.txt";
     private static final String RESOURCE_URL = "https://bm.wtf/resources/11079/";
+    private static final String MODRINTH_URL = "https://modrinth.com/plugin/soulbuyer";
+    private static final String MODRINTH_URL_RU = "https://modrinth.black/plugin/soulbuyer";
     private static final int CONNECT_TIMEOUT_MS = 5000;
     private static final int READ_TIMEOUT_MS = 5000;
 
@@ -48,7 +50,10 @@ public final class SoulBuyerUpdateChecker {
         SoulBuyerConsole.warn("A new SoulBuyer version is available!");
         SoulBuyerConsole.line("  Current: " + SoulBuyerConsole.gray(currentVersion));
         SoulBuyerConsole.line("  Latest: " + SoulBuyerConsole.green(latestVersion));
-        SoulBuyerConsole.line("  Download: " + SoulBuyerConsole.gray(RESOURCE_URL));
+        SoulBuyerConsole.line("  Download: ");
+        SoulBuyerConsole.line("    BM: " + SoulBuyerConsole.gray(RESOURCE_URL));
+        SoulBuyerConsole.line("    Modrinth: " + SoulBuyerConsole.gray(MODRINTH_URL));
+        SoulBuyerConsole.line("     Modrinth (RU): " + SoulBuyerConsole.gray(MODRINTH_URL_RU));
         SoulBuyerConsole.line(SoulBuyerConsole.border());
         SoulBuyerConsole.blank();
     }

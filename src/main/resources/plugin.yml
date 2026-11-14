@@ -1,0 +1,42 @@
+name: SoulBuyer
+version: '${version}'
+main: bm.b0b0b0.soulBuyer.SoulBuyer
+api-version: '1.21'
+folia-supported: true
+authors: [ b0b0b0 ]
+load: POSTWORLD
+softdepend: [ Vault, PlayerPoints, Essentials, PlaceholderAPI ]
+permissions:
+  soulbuyer.use:
+    description: Open buyer menu
+    default: true
+  soulbuyer.admin:
+    description: Admin commands
+    default: op
+  soulbuyer.autosell:
+    description: Donator autosell on pickup
+    default: op
+  soulbuyer.donate:
+    description: Open donate buyer menu (PlayerPoints)
+    default: true
+  soulbuyer.boosters:
+    description: Open booster shop in buyer menu
+    default: true
+  soulbuyer.limit.vip:
+    description: Higher daily sell limit per item (128)
+    default: false
+  soulbuyer.limit.premium:
+    description: Premium daily sell limit per item (256)
+    default: false
+  soulbuyer.multiplier.vip:
+    description: VIP income multiplier tier
+    default: false
+  soulbuyer.multiplier.premium:
+    description: Premium income multiplier tier
+    default: false
+libraries:
+  - net.elytrium:serializer:1.1.1
+  - com.zaxxer:HikariCP:5.1.0
+  - com.mysql:mysql-connector-j:8.4.0
+  - org.xerial:sqlite-jdbc:3.46.1.3
+  - redis.clients:jedis:5.1.0

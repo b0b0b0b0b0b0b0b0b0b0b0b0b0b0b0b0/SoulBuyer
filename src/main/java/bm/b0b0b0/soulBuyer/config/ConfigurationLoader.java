@@ -1,0 +1,75 @@
+package bm.b0b0b0.soulBuyer.config;
+
+import bm.b0b0b0.soulBuyer.config.settings.GuiAutosellSettings;
+import bm.b0b0b0.soulBuyer.config.settings.GuiBoostersSettings;
+import bm.b0b0b0.soulBuyer.config.settings.GuiBuyerSettings;
+import bm.b0b0b0.soulBuyer.config.settings.GuiQuantitySettings;
+import bm.b0b0b0.soulBuyer.config.settings.GuiGeneralSettings;
+import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerItemsSettings;
+import bm.b0b0b0.soulBuyer.config.settings.SoulBuyerSettings;
+import bm.b0b0b0.soulBuyer.debug.SoulBuyerDebugLog;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public final class ConfigurationLoader {
+
+    private final SoulBuyerSettings mainSettings = new SoulBuyerSettings();
+    private final SoulBuyerItemsSettings itemsSettings = new SoulBuyerItemsSettings();
+    private final GuiGeneralSettings generalGuiSettings = new GuiGeneralSettings();
+    private final GuiBuyerSettings buyerGuiSettings = new GuiBuyerSettings();
+    private final GuiQuantitySettings quantityGuiSettings = new GuiQuantitySettings();
+    private final GuiAutosellSettings autosellGuiSettings = new GuiAutosellSettings();
+    private final GuiBoostersSettings boostersGuiSettings = new GuiBoostersSettings();
+    private PluginConfig pluginConfig;
+
+    public PluginConfig load(JavaPlugin plugin, SoulBuyerDebugLog debug) {
+        SerializedConfigReloader.reload(plugin, mainSettings, Path.of("config.yml"), debug);
+        SerializedConfigReloader.reload(plugin, itemsSettings, Path.of("items.yml"), debug);
+        SerializedConfigReloader.reload(plugin, generalGuiSettings, Path.of("gui", "general.yml"), debug);
+        SerializedConfigReloader.reload(plugin, buyerGuiSettings, Path.of("gui", "buyer.yml"), debug);
+        SerializedConfigReloader.reload(plugin, quantityGuiSettings, Path.of("gui", "quantity.yml"), debug);
+        SerializedConfigReloader.reload(plugin, autosellGuiSettings, Path.of("gui", "autosell.yml"), debug);
+        SerializedConfigReloader.reload(plugin, boostersGuiSettings, Path.of("gui", "boosters.yml"), debug);
+        pluginConfig = new PluginConfig(
+                mainSettings,
+                itemsSettings,
+                generalGuiSettings,
+                buyerGuiSettings,
+                quantityGuiSettings,
+                autosellGuiSettings,
+                boostersGuiSettings
+        );
+        return pluginConfig;
+    }
+
+    public PluginConfig reload(JavaPlugin plugin, SoulBuyerDebugLog debug) {
+        return load(plugin, debug);
+    }
+
+    public SoulBuyerSettings mainSettings() {
+        return mainSettings;
+    }
+
+    public SoulBuyerItemsSettings itemsSettings() {
+        return itemsSettings;
+    }
+
+    public PluginConfig pluginConfig() {
+        return pluginConfig;
+    }
+
+    public void saveMain(JavaPlugin plugin, SoulBuyerDebugLog debug) {
+        Path path = plugin.getDataFolder().toPath().resolve("config.yml");
+        try {
+            if (path.getParent() != null) {
+                Files.createDirectories(path.getParent());
+            }
+            mainSettings.save(path);
+            debug.boot("elytrium save OK: config.yml");
+        } catch (Exception exception) {
+            debug.error("elytrium save FAIL: config.yml", exception);
+            throw new IllegalStateException("Failed to save config.yml: " + exception.getMessage(), exception);
+        }
+    }
+}
